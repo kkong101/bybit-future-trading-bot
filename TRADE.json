@@ -1,0 +1,40 @@
+{
+  "vix": [
+    {
+      "range": "1~20",
+      "leverage": 3,
+      "using_money_rate": 0.4
+    },
+    {
+      "range": "20~50",
+      "leverage": 3,
+      "using_money_rate": 0.3
+    },
+    {
+      "range": "50~55",
+      "leverage": 3,
+      "using_money_rate": 0.8
+    },
+    {
+      "range": "55~100",
+      "leverage": 3,
+      "using_money_rate": 0.4
+    }
+  ],
+  "close_position": {
+    "profit": {
+      "profit_percentage": 0.01
+    },
+    "loss": {
+      "loss_percentage": 0.02
+    },
+    "close_position_time": 30
+  },
+  "order_interval": 4,
+  "call_put_tick_size": 20,
+  "circuit_breaker": {
+    "time": 600,
+    "percentage": 0.02
+  },
+  "additional_position": 3
+}
