@@ -1,8 +1,17 @@
 const { coin_info } = require("../globalState/index");
 const { getAxios } = require("../axios/index");
-const { circuit_breaker } = require("../globalState/index");
+const {
+  circuit_breaker,
+  on_position_coin_list,
+} = require("../globalState/index");
 const { getPercentage } = require("../utils/index");
 const { trade } = require("../globalState/index");
+const {
+  get_current_price,
+  create_limit_order,
+  close_one_position,
+} = require("../trade/order");
+const { setBalance } = require("../trade/deposit");
 const COINS = require("../COINS.json");
 const TRADE = require("../TRADE.json");
 
@@ -12,19 +21,20 @@ module.exports = {
     const res = await getAxios(symbol_url);
 
     if (res.ret_msg === "OK") {
-      res.result.forEach((e) => {
-        // 블랙 리스트 제외한 나머지 추가.
-        if (COINS.white_list.find((bl) => bl.symbol == e.name)) {
+      for (const result of res.result) {
+        if (COINS.white_list.find((bl) => bl.symbol == result.name)) {
+          const current_price = await get_current_price(result.name);
           coin_info.push({
-            symbol: e.name,
-            tick_size: parseFloat(e.price_filter.tick_size),
-            min_price: parseFloat(e.price_filter.min_price),
-            min_trading_qty: parseFloat(e.lot_size_filter.min_trading_qty),
-            qty_step: parseFloat(e.lot_size_filter.qty_step),
-            previous_price: 0,
+            symbol: result.name,
+            tick_size: parseFloat(result.price_filter.tick_size),
+            min_price: parseFloat(result.price_filter.min_price),
+            min_trading_qty: parseFloat(result.lot_size_filter.min_trading_qty),
+            qty_step: parseFloat(result.lot_size_filter.qty_step),
+            previous_price: current_price,
+            order: [],
           });
         }
-      });
+      }
     }
   },
   set_circuit_breaker_condition: async () => {
@@ -92,6 +102,118 @@ module.exports = {
       console.log("탐지 들어갔지만 다시 리셋!!");
       console.log("탐지 들어갔지만 다시 리셋!!");
       console.log("탐지 들어갔지만 다시 리셋!!");
+    }
+  },
+  check_on_position_list: async (symbol) => {
+    // 시작
+    const res = await getAxios("/private/linear/position/list", {
+      symbol: symbol,
+    });
+
+    if (res.result != null) {
+      for (const position of res.result) {
+        // 만약 구매한 상태라면,
+        if (position.size != 0) {
+          let isDuplicated = false;
+          for (const our_list of on_position_coin_list) {
+            if (our_list.symbol == symbol && our_list.side == position.side) {
+              isDuplicated = true;
+            }
+          }
+          if (!isDuplicated) {
+            on_position_coin_list.push({
+              symbol: symbol,
+              side: position.side,
+            });
+            return position.side;
+          }
+        }
+      }
+    }
+  },
+  check_limit_order_list: async (symbol) => {
+    const updated_order_list = [];
+
+    const idx = coin_info.findIndex((e) => e.symbol == symbol);
+
+    const res = await getAxios("/private/linear/order/search", {
+      symbol,
+    });
+
+    if (res.result != null) {
+      for (const order of res.result) {
+        if (
+          order.order_status == "New" ||
+          order.order_status == "PartiallyFilled"
+        ) {
+          const position = order.order_link_id.split("-")[3];
+          updated_order_list.push({
+            id: order.order_id,
+            position: parseInt(position),
+          });
+        }
+      }
+      // 업데이트 된 내용으로 변경해줌.
+      coin_info[idx].order = updated_order_list;
+    }
+  },
+  check_position_change: async (symbol) => {
+    const coinObject = coin_info.find((coin) => coin.symbol == symbol);
+
+    // 없는 포지션 숫자를 찾아서 배열에 담음.
+    const absent_position_list = [];
+
+    const position_list = coinObject.order.map((e) => e.position);
+    const full_position_list = [1, 2, 3, 4];
+
+    for (const position of full_position_list) {
+      if (!position_list.includes(position)) {
+        absent_position_list.push(position);
+      }
+    }
+
+    console.log("absent_position_list", absent_position_list);
+
+    // 현재 position ex) ["Buy", "Sell"]
+    const on_position_list = [];
+
+    for (const position of on_position_coin_list) {
+      // 해당 코인이 있을경우
+      if (
+        position.symbol == symbol &&
+        !on_position_list.includes(position.side)
+      ) {
+        on_position_list.push(position.side);
+      }
+    }
+
+    // 만약 1, 2의 포지션이 없을 경우에 =>
+    if (
+      !absent_position_list.includes(1) &&
+      !absent_position_list.includes(2)
+    ) {
+      // [1,2] 에 주문을 넣어준다.
+      await create_limit_order(coinObject.symbol, coinObject.tick_size, [1, 2]);
+    } else if (absent_position_list.includes(2)) {
+      // 만약 2의 포지션이 없을 경우에 =>
+      // 1을 2로 옮겨준다.
+      const idx = coinObject.order.findIndex((e) => e.position == 1);
+      if (idx == -1) return;
+      coinObject.order[idx].position = 2;
+    }
+
+    if (
+      !absent_position_list.includes(3) &&
+      !absent_position_list.includes(4)
+    ) {
+      // 만약 3, 4의 포지션이 없을 경우에 =>
+      // [3,4] 에 주문을 넣어준다.
+      await create_limit_order(coinObject.symbol, coinObject.tick_size, [3, 4]);
+    } else if (absent_position_list.includes(3)) {
+      // 4을 3으로 옮겨준다.
+      const idx = coinObject.order.findIndex((e) => e.position == 4);
+      if (idx == -1) return;
+      coinObject.order[idx].position = 3;
     }
   },
 };

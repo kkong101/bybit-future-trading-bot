@@ -5,6 +5,7 @@ module.exports = {
     using_money_rate: 0,
     is_circuit_breaker: false,
     is_onPosition: false,
+    is_onCreate_order: false,
   },
   coin_info: [],
   /**
@@ -19,7 +20,33 @@ module.exports = {
       previous_price: 0,
     }
    */
+
+  /**
+   * 이렇게 변경 
+   * order: [
+        {
+          id: "fnewejnf",
+          position: 1
+        },
+        {
+          id: "fnewejnf",
+          position: 2
+        },
+        {
+          id: "fnewejnf",
+          position: 3
+        }
+   * ]
+   */
+
   on_position_coin_list: [],
+  /**
+   *   on_position_coin_list.push({
+                symbol: symbol,
+                order_id: order.order_id,
+                side: order.side,
+              });
+   */
   circuit_breaker: {
     btc_price: 0,
     checked_time: Date.now(),

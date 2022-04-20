@@ -11,7 +11,7 @@ module.exports = {
     setTimeout(async () => {
       await page.content().then((html) => {
         const index = html.indexOf((dy = '"38"'));
-        const vixNum = parseFloat(html.substr(index + 5, 5));
+        let vixNum = parseFloat(html.substr(index + 5, 5));
         browser.close();
         if (isNaN(vixNum)) {
           console.log("VIX 가져오는데 에러가 발생하였습니다.(임시로 50 세팅)");

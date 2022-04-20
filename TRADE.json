@@ -28,10 +28,10 @@
     "loss": {
       "loss_percentage": 0.02
     },
-    "close_position_time": 30
+    "close_position_time": 20
   },
   "order_interval": 4,
-  "call_put_tick_size": 20,
+  "call_put_tick_size": 25,
   "circuit_breaker": {
     "time": 600,
     "percentage": 0.02
