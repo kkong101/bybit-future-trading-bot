@@ -188,11 +188,16 @@ module.exports = {
     }
 
     // 만약 1, 2의 포지션이 없을 경우에 =>
-    if (
-      !absent_position_list.includes(1) &&
-      !absent_position_list.includes(2)
-    ) {
+    if (absent_position_list.includes(1) && absent_position_list.includes(2)) {
       // [1,2] 에 주문을 넣어준다.
+
+      // 만약 1 ,2 포지션을 가지고 있다면 거래를 만들지 않고 1, 2번 포지션이 없다면 거래 보낸다.
+      for (const position of on_position_coin_list) {
+        if (position.symbol == coinObject.symbol && position.side == "Sell") {
+          return;
+        }
+      }
+
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [1, 2]);
     } else if (absent_position_list.includes(2)) {
       // 만약 2의 포지션이 없을 경우에 =>
@@ -202,12 +207,16 @@ module.exports = {
       coinObject.order[idx].position = 2;
     }
 
-    if (
-      !absent_position_list.includes(3) &&
-      !absent_position_list.includes(4)
-    ) {
+    if (absent_position_list.includes(3) && absent_position_list.includes(4)) {
       // 만약 3, 4의 포지션이 없을 경우에 =>
       // [3,4] 에 주문을 넣어준다.
+
+      for (const position of on_position_coin_list) {
+        if (position.symbol == coinObject.symbol && position.side == "Buy") {
+          return;
+        }
+      }
+
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [3, 4]);
     } else if (absent_position_list.includes(3)) {
       // 4을 3으로 옮겨준다.

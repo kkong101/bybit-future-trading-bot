@@ -30,6 +30,7 @@ module.exports = {
       setTimeout(async () => {
         const side = await check_on_position_list(symbol);
 
+        // 포지션 처리하는 부분 로직 다시 생각해야댐.
         if (side == "Buy" || side == "Sell") {
           setTimeout(async () => {
             await close_one_position(symbol, side);
