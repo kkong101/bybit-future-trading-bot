@@ -24,12 +24,6 @@ const TRADE = require("./TRADE.json");
 const API_KEY = SECRET.bybit.API_KEY;
 const PRIVATE_KEY = SECRET.bybit.API_SECRET;
 
-const wsConfig = {
-  key: API_KEY,
-  secret: PRIVATE_KEY,
-  wsUrl: "wss://stream-testnet.bybit.com/realtime_public",
-};
-
 // const test = async () => {
 //   // console.log(getPercentage(1100, 1000));
 //   const ws = new WebsocketClient(wsConfig);
@@ -73,39 +67,20 @@ const wsConfig = {
 // };
 
 const test123 = async () => {
-  const test = {
-    order: [
-      {
-        position: 1,
-      },
-      {
-        position: 2,
-      },
-      {
-        position: 3,
-      },
-      {
-        position: 4,
-      },
-    ],
+  const wsConfigUpdate = {
+    key: API_KEY,
+    secret: PRIVATE_KEY,
+    wsUrl: "wss://stream-testnet.bybit.com/realtime_private",
   };
-  let i = 0;
-  for (const e of test.order) {
-    if (e.position == 3) {
-      test.order[i].position = -100;
-    }
 
-    i++;
-  }
-  console.log(test);
-  // await getCoinInfo();
-  // const symbol = "BTCUSDT";
-  // await check_on_position_list(symbol);
+  const wsUpdate = new WebsocketClient(wsConfigUpdate);
+  wsUpdate.subscribe("execution");
 
-  // await check_limit_order_list(symbol);
-
-  // console.log("주문 걸려있는거 => ", coin_info[0].order);
-  // console.log("체결되어 있는거 =>", on_position_coin_list);
+  wsUpdate.on("update", async (data) => {
+    console.log("##############");
+    console.log(data);
+    console.log("##############");
+  });
 };
 
 test123();

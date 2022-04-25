@@ -40,6 +40,7 @@ module.exports = {
    */
 
   on_position_coin_list: [],
+  create_order_queue: [],
   /**
    *   on_position_coin_list.push({
                 symbol: symbol,

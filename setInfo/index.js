@@ -124,8 +124,9 @@ module.exports = {
             on_position_coin_list.push({
               symbol: symbol,
               side: position.side,
+              price: position.entry_price,
+              time: Date.now(),
             });
-            return position.side;
           }
         }
       }
@@ -172,21 +173,6 @@ module.exports = {
       }
     }
 
-    console.log("absent_position_list", absent_position_list);
-
-    // 현재 position ex) ["Buy", "Sell"]
-    const on_position_list = [];
-
-    for (const position of on_position_coin_list) {
-      // 해당 코인이 있을경우
-      if (
-        position.symbol == symbol &&
-        !on_position_list.includes(position.side)
-      ) {
-        on_position_list.push(position.side);
-      }
-    }
-
     // 만약 1, 2의 포지션이 없을 경우에 =>
     if (absent_position_list.includes(1) && absent_position_list.includes(2)) {
       // [1,2] 에 주문을 넣어준다.
@@ -197,8 +183,13 @@ module.exports = {
           return;
         }
       }
-
+      /**
+       * 주문 넣는곳@@@@@
+       */
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [1, 2]);
+      /**
+       * 주문 넣는곳 끝
+       */
     } else if (absent_position_list.includes(2)) {
       // 만약 2의 포지션이 없을 경우에 =>
       // 1을 2로 옮겨준다.
@@ -217,12 +208,52 @@ module.exports = {
         }
       }
 
+      /**
+       * 주문 넣는곳@@@@@
+       */
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [3, 4]);
+      /**
+       * 주문 넣는곳 끝
+       */
     } else if (absent_position_list.includes(3)) {
       // 4을 3으로 옮겨준다.
       const idx = coinObject.order.findIndex((e) => e.position == 4);
       if (idx == -1) return;
       coinObject.order[idx].position = 3;
+    }
+  },
+
+  check_position_order: async (symbol) => {
+    for (const position of on_position_coin_list) {
+      console.log("check_position_order123", position);
+      if (position.symbol == symbol) {
+        const current_price = await get_current_price(symbol);
+
+        console.log("current_price :", current_price);
+        console.log("Date.now() - position.time", Date.now() - position.time);
+
+        // 해당하는 포지션 작업이 왔다면, 설정파일에 있는 시간를 체크함
+        if (
+          Date.now() - position.time >
+          TRADE.close_position.close_position_time * 1000
+        ) {
+          // 설정파일에서 설정한 시간이 지났다면 포지션 정리
+          await close_one_position(symbol, position.side);
+        } else if (
+          (position.side == "Sell" &&
+            current_price <
+              position.price -
+                position.price *
+                  TRADE.close_position.profit.profit_percentage) ||
+          (position.side == "Buy" &&
+            current_price >
+              position.price +
+                position.price * TRADE.close_position.profit.profit_percentage)
+        ) {
+          // 만약 롱과 숏이 설정해놓은 퍼샌테이지 이상의 익절 상태라면,
+          await close_one_position(symbol, position.side);
+        }
+      }
     }
   },
 };

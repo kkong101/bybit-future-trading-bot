@@ -212,6 +212,7 @@ module.exports = {
     });
   },
   close_one_position: async (symbol, side) => {
+    trade.is_onCreate_order = true;
     const res = await getAxios("/private/linear/position/list", {
       symbol: symbol,
     });
@@ -234,11 +235,14 @@ module.exports = {
         // 판매가 완료 되었으면,  on_position_coin_list 에서 빼줌 .
         if (res.result != null) {
           const idx = on_position_coin_list.findIndex(
-            (e) => e.symbol == res.result.symbol && e.side == res.result.side
+            (e) => e.symbol == symbol && e.side == side
           );
+          console.log("삭제할 side", side);
+          console.log("삭제된 idx, ", idx);
           on_position_coin_list.splice(idx, 1);
 
           console.log("익절 / 손절해서 on_position_list에서 제외 해줌.");
+          trade.is_onCreate_order = false;
         }
 
         if (res.rate_limit_status == "0") {
@@ -251,6 +255,7 @@ module.exports = {
 
             setTimeout(() => {
               trade.is_circuit_breaker = false;
+              trade.is_onCreate_order = false;
             }, 1000);
           }, after_time + 500);
         }
@@ -260,6 +265,7 @@ module.exports = {
         return;
       }
     }
+    trade.is_onCreate_order = false;
   },
   get_current_price: async (symbol) => {
     const kline_res = await getAxios("/public/linear/kline", {
@@ -273,6 +279,7 @@ module.exports = {
   },
   // limit_rate가 걸렸을경우 전부 대기시키고 1순위로 주문을 넣어줘야댐.
   create_limit_order: async (symbol, tick_size, order_position_list) => {
+    trade.is_onCreate_order = true;
     const idx = coin_info.findIndex((e) => e.symbol == symbol);
 
     const thisModule = require("./order");
@@ -304,6 +311,7 @@ module.exports = {
           id: short_res2.result.order_id,
           position: 1,
         });
+        trade.is_onCreate_order = false;
       }
     }
     if (order_position_list.includes(2)) {
@@ -318,6 +326,7 @@ module.exports = {
           id: short_res1.result.order_id,
           position: 2,
         });
+        trade.is_onCreate_order = false;
       }
     }
     if (order_position_list.includes(3)) {
@@ -331,6 +340,7 @@ module.exports = {
           id: long_res1.result.order_id,
           position: 3,
         });
+        trade.is_onCreate_order = false;
       }
     }
     if (order_position_list.includes(4)) {
@@ -344,6 +354,7 @@ module.exports = {
           id: long_res2.result.order_id,
           position: 4,
         });
+        trade.is_onCreate_order = false;
       }
     }
   },
