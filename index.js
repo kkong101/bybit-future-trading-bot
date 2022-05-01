@@ -141,7 +141,9 @@ const main = async () => {
         coin_info[idx].previous_price + coin_info[idx].tick_size >= price &&
         coin_info[idx].previous_price - coin_info[idx].tick_size <= price
       ) {
-        console.log("이전가격과 동일하여 replace order 부분 return");
+        console.log(
+          "이전가격과 동일하여 replace order 부분 return ################"
+        );
         return;
       }
 
@@ -155,7 +157,10 @@ const main = async () => {
 
       console.log("REPLACE ORDER", res4);
 
-      coin_info[idx].update_time = Date.now();
+      if (res1 && res2 && res3 && res4) {
+        coin_info[idx].previous_price = price;
+        coin_info[idx].update_time = Date.now();
+      }
     }
   }, TRADE.order_interval * 1000);
 

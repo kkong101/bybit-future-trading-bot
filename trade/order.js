@@ -4,6 +4,7 @@ const {
   coin_info,
   on_position_coin_list,
 } = require("../globalState/index");
+const { get_current_price } = require("../trade/order");
 const TRADE = require("../TRADE.json");
 
 module.exports = {
@@ -160,9 +161,9 @@ module.exports = {
 
     const res = await postAxios("/private/linear/order/replace", params);
     if ((res.ret_msg = "OK")) {
-      coin_info[idx].previous_price = price;
+      console.log("가격 업데이트 ###### ");
+      return true;
     }
-    return res;
   },
 
   close_all_position: async () => {
