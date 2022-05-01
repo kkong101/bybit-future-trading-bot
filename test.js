@@ -28,6 +28,18 @@ const TRADE = require("./TRADE.json");
 const API_KEY = SECRET.bybit.API_KEY;
 const PRIVATE_KEY = SECRET.bybit.API_SECRET;
 
+const wsConfig = {
+  key: API_KEY,
+  secret: PRIVATE_KEY,
+  wsUrl: "wss://stream-testnet.bybit.com/realtime_public",
+};
+
+const wsConfigUpdate = {
+  key: API_KEY,
+  secret: PRIVATE_KEY,
+  wsUrl: "wss://stream-testnet.bybit.com/realtime_private",
+};
+
 // const test = async () => {
 //   // console.log(getPercentage(1100, 1000));
 //   const ws = new WebsocketClient(wsConfig);
@@ -70,20 +82,14 @@ const PRIVATE_KEY = SECRET.bybit.API_SECRET;
 //   });
 // };
 
-const test123 = () => {
-  const test = [];
-  test.push({
-    symbol: "BTCUSDT",
-    tick_size: 0.5,
-    min_price: 0.5,
-    min_trading_qty: 0.001,
-    qty_step: 0.001,
-    previous_price: 37650.5,
-    order: [],
-  });
+const test123 = async () => {
+  const test = [
+    { id: "87b0d70b-af04-465f-9d4e-2a605d0f351a", position: 2 },
+    { id: "c9f360fa-4a31-4d0f-8a20-dbdf7df53384", position: 3 },
+    { id: "8c80a73a-9433-45a0-892d-82e64423e19d", position: 4 },
+  ];
 
-  const aa = test.find((ee) => ee.symbol === "BTCUSDT");
-  console.log(aa);
+  console.log(test.find((e) => e.position == 2));
 };
 
 test123();

@@ -242,7 +242,7 @@ module.exports = {
     // on_position_list에 1번 혹은 2번 거래가 없고, 2번만 걸려 있을 시 1번 거래 넣어줌.
     if (
       on_position_coin_list.find(
-        (e) => e.symbol == symbol && e.side == "Buy"
+        (e) => e.symbol == symbol && e.side == "Sell"
       ) == null &&
       absent_position_list.includes(1) &&
       !absent_position_list.includes(2)
@@ -253,7 +253,7 @@ module.exports = {
     // on_position_list에 3번 혹은 4번 거래가 없고, 3번만 걸려 있을 시 4번 거래 넣어줌.
     if (
       on_position_coin_list.find(
-        (e) => e.symbol == symbol && e.side == "Sell"
+        (e) => e.symbol == symbol && e.side == "Buy"
       ) == null &&
       absent_position_list.includes(3) &&
       !absent_position_list.includes(4)

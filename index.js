@@ -17,6 +17,7 @@ const {
   close_one_position,
   close_all_position,
   create_limit_order,
+  get_current_price,
 } = require("./trade/order");
 
 const { check_order, check_send_order } = require("./subscribe/update");
@@ -127,57 +128,98 @@ const main = async () => {
     }, 1000);
   }, 4500);
 
-  setTimeout(() => {
-    ws.close("trade.*");
-    coin_info.forEach((e) => {
-      ws.subscribe(`trade.${e.symbol}`);
-    });
+  /**
+   * Websocket으로 불러오는 부분 => API로 불러오게 변경
+   */
 
-    ws.on("update", async (data) => {
-      // 50틱 이상 가격에 걸어줌.
-      const symbol = data.data[0].symbol;
-      const price = parseFloat(data.data[0].price);
+  setInterval(async () => {
+    for (const coin of COINS.white_list) {
+      const price = await get_current_price(coin.symbol);
+      const idx = coin_info.findIndex((e) => e.symbol == coin.symbol);
 
-      console.log("!@#", symbol, " => ", price);
-
-      if (coin_info.find((e) => symbol == e.symbol)) {
-        let idx = coin_info.findIndex((e) => e.symbol == symbol);
-
-        console.log("이거 뭐나옴 ? ", Date.now() - coin_info[idx].update_time);
-        if (
-          Date.now() - coin_info[idx].update_time >
-          TRADE.order_interval * 1000
-        ) {
-          // 같은 가격이면 요청 보내지 않음.tick_size
-          if (
-            coin_info[idx].previous_price + coin_info[idx].tick_size >= price &&
-            coin_info[idx].previous_price - coin_info[idx].tick_size <= price
-          ) {
-            console.log("이전가격과 동일하여 replace order 부분 return");
-            return;
-          }
-          /**
-           * high_position_price + tick_size * TRADE.call_put_tick_size,
-           */
-          console.log("가격 업데이트");
-
-          // idx는 coin_info에서 해당하는 coin이 몇번째에 있는지의 대한 값임.
-          // 1은 limit order가 위에서부터 몇번째인지 >?
-          const res1 = await replace_order(symbol, price, idx, 1);
-
-          const res2 = await replace_order(symbol, price, idx, 2);
-
-          const res3 = await replace_order(symbol, price, idx, 3);
-
-          const res4 = await replace_order(symbol, price, idx, 4);
-
-          console.log("REPLACE ORDER", res4);
-
-          coin_info[idx].update_time = Date.now();
-        }
+      if (
+        coin_info[idx].previous_price + coin_info[idx].tick_size >= price &&
+        coin_info[idx].previous_price - coin_info[idx].tick_size <= price
+      ) {
+        console.log("이전가격과 동일하여 replace order 부분 return");
+        return;
       }
-    });
-  }, 4000);
+
+      const res1 = await replace_order(coin.symbol, price, idx, 1);
+
+      const res2 = await replace_order(coin.symbol, price, idx, 2);
+
+      const res3 = await replace_order(coin.symbol, price, idx, 3);
+
+      const res4 = await replace_order(coin.symbol, price, idx, 4);
+
+      console.log("REPLACE ORDER", res4);
+
+      coin_info[idx].update_time = Date.now();
+    }
+  }, TRADE.order_interval * 1000);
+
+  /**
+   * THE END ###
+   */
+
+  /**
+   * 이전 버전
+   */
+  // setTimeout(() => {
+  //   ws.close("trade.*");
+  //   coin_info.forEach((e) => {
+  //     ws.subscribe(`trade.${e.symbol}`);
+  //   });
+
+  //   ws.on("update", async (data) => {
+  //     // 50틱 이상 가격에 걸어줌.
+  //     const symbol = data.data[0].symbol;
+  //     const price = parseFloat(data.data[0].price);
+
+  //     console.log("!@#", symbol, " => ", price);
+
+  //     if (coin_info.find((e) => symbol == e.symbol)) {
+  //       let idx = coin_info.findIndex((e) => e.symbol == symbol);
+
+  //       console.log("이거 뭐나옴 ? ", Date.now() - coin_info[idx].update_time);
+  //       if (
+  //         Date.now() - coin_info[idx].update_time >
+  //         TRADE.order_interval * 1000
+  //       ) {
+  //         // 같은 가격이면 요청 보내지 않음.tick_size
+  //         if (
+  //           coin_info[idx].previous_price + coin_info[idx].tick_size >= price &&
+  //           coin_info[idx].previous_price - coin_info[idx].tick_size <= price
+  //         ) {
+  //           console.log("이전가격과 동일하여 replace order 부분 return");
+  //           return;
+  //         }
+  //         /**
+  //          * high_position_price + tick_size * TRADE.call_put_tick_size,
+  //          */
+  //         console.log("가격 업데이트");
+
+  //         // idx는 coin_info에서 해당하는 coin이 몇번째에 있는지의 대한 값임.
+  //         // 1은 limit order가 위에서부터 몇번째인지 >?
+  //         const res1 = await replace_order(symbol, price, idx, 1);
+
+  //         const res2 = await replace_order(symbol, price, idx, 2);
+
+  //         const res3 = await replace_order(symbol, price, idx, 3);
+
+  //         const res4 = await replace_order(symbol, price, idx, 4);
+
+  //         console.log("REPLACE ORDER", res4);
+
+  //         coin_info[idx].update_time = Date.now();
+  //       }
+  //     }
+  //   });
+  // }, 4000);
+  /**
+   * THE END ###
+   */
 
   /**
    * 거래가 체결되면 order_id 다시한번 받아와서 정렬해줘야댐.... 헐..
