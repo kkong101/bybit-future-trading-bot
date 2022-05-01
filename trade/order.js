@@ -61,7 +61,6 @@ module.exports = {
     const namo = qty % coinObject.qty_step;
 
     qty = qty - namo;
-
     if (qty < coinObject.min_trading_qty) {
       // 만약에 돈이 없다면,
       return;
@@ -84,7 +83,6 @@ module.exports = {
       take_profit: take_profit,
       stop_loss: stop_loss,
     };
-
     const res = await postAxios("/private/linear/order/create", params);
     return res;
   },

@@ -3,25 +3,24 @@ const coins = require("../COINS.json");
 const { trade } = require("../globalState/index");
 
 module.exports = {
-  cancelAll: () => {
+  cancelAll: async () => {
     // 일단 lock 걸어줌.
-    trade.is_circuit_breaker = true;
-
-    coins.white_list.forEach(async (e) => {
+    for (const cois of coins.white_list) {
       const res = await getAxios("/private/linear/order/list", {
-        symbol: e.symbol,
+        symbol: cois.symbol,
         order_status: "New",
       });
       let order_list = [];
       if (res.result.data != undefined) {
-        res.result.data.forEach((e) => {
-          order_list.push(e.order_id);
-        });
+        for (const result of res.result.data) {
+          order_list.push(result.order_id);
+        }
       }
 
-      order_list.forEach(async (order_id) => {
+      for (const order_id of order_list) {
+        trade.is_circuit_breaker = true;
         await postAxios("/private/linear/order/cancel", {
-          symbol: e.symbol,
+          symbol: cois.symbol,
           order_id: order_id,
         }).then((res) => {
           // rate_limit를 초과할 시
@@ -30,7 +29,7 @@ module.exports = {
             console.log("after_time : ", after_time);
             setTimeout(async () => {
               await postAxios("/private/linear/order/cancel", {
-                symbol: e.symbol,
+                symbol: cois.symbol,
                 order_id: order_id,
               });
 
@@ -43,11 +42,9 @@ module.exports = {
           if (res.ret_msg == "OK") {
             trade.is_circuit_breaker = false;
           }
-
-          console.log(res);
         });
-      });
-    });
+      }
+    }
   },
   setBalance: async () => {
     const res = await getAxios("/v2/private/wallet/balance");

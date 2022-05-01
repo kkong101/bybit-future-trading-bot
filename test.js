@@ -10,7 +10,11 @@ const { getPercentage } = require("./utils/index");
 const { cancelAll, setBalance } = require("./trade/deposit");
 const { getAxios, postAxios } = require("./axios/index");
 const { setVix } = require("./vix/index");
-const { close_one_position, close_all_position } = require("./trade/order");
+const {
+  close_one_position,
+  close_all_position,
+  get_current_price,
+} = require("./trade/order");
 
 const {
   set_circuit_breaker_condition,
@@ -66,21 +70,20 @@ const PRIVATE_KEY = SECRET.bybit.API_SECRET;
 //   });
 // };
 
-const test123 = async () => {
-  const wsConfigUpdate = {
-    key: API_KEY,
-    secret: PRIVATE_KEY,
-    wsUrl: "wss://stream-testnet.bybit.com/realtime_private",
-  };
-
-  const wsUpdate = new WebsocketClient(wsConfigUpdate);
-  wsUpdate.subscribe("execution");
-
-  wsUpdate.on("update", async (data) => {
-    console.log("##############");
-    console.log(data);
-    console.log("##############");
+const test123 = () => {
+  const test = [];
+  test.push({
+    symbol: "BTCUSDT",
+    tick_size: 0.5,
+    min_price: 0.5,
+    min_trading_qty: 0.001,
+    qty_step: 0.001,
+    previous_price: 37650.5,
+    order: [],
   });
+
+  const aa = test.find((ee) => ee.symbol === "BTCUSDT");
+  console.log(aa);
 };
 
 test123();

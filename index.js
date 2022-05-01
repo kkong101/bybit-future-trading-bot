@@ -40,6 +40,7 @@ const wsConfigUpdate = {
 // 시작했을 때 코인 정보 가져오는 부분
 
 const main = async () => {
+  await cancelAll();
   await setBalance();
   await getCoinInfo();
   setVix();
@@ -49,34 +50,66 @@ const main = async () => {
   wsUpdate.subscribe("execution");
 
   const ws = new WebsocketClient(wsConfig);
+
   /**
-   * {
-   *  symbol: "BTCUSDT"
-   * }
+   * 최초 주문 넣어주는 부분
    */
+  setTimeout(async () => {
+    for (const coin of COINS.white_list) {
+      const coinObject = coin_info.find((ee) => ee.symbol == coin.symbol);
 
-  // 거래 큐를 처리하는 부분
-  // setInterval(async () => {
-  //   if (trade.is_circuit_breaker || trade.is_onCreate_order) return;
-  //   // 큐에 데이터가 있다면,
-  //   // 큐가 비워질때까지 처리 진행, 바이비트 서버 체결 시간이 조금 걸려서 시간 걸어줌.
+      const tick_size = parseFloat(coinObject.tick_size);
+      await create_limit_order(coin.symbol, tick_size, [1, 2, 3, 4]);
+      coinObject.update_time = Date.now();
+    }
+  }, 1500);
 
-  //   for (const coin of coin_info) {
-  //     await check_order(coin.symbol);
-  //   }
-  // }, 2000);
+  /**
+   * END ###
+   */
 
   const queue = [];
   let last_updated_time = Date.now();
 
   setTimeout(() => {
+    /**
+     * 체결 정보 실시간으로 받는곳
+     */
+    wsUpdate.on("update", async (data) => {
+      console.log("##############");
+      console.log(data);
+      console.log("##############");
+      for (const res of data.data) {
+        for (const q of queue) {
+          if (q.symbol == res.symbol && q.side == res.side) {
+            break;
+          } else {
+            queue.push({
+              symbol: res.symbol,
+              side: res.side,
+            });
+          }
+        }
+      }
+    });
+    /**
+     * END #####
+     */
+
     setInterval(async () => {
       console.log("trade.is_onCreate_order", trade.is_onCreate_order);
+      console.log("trade.is_circuit_breaker", trade.is_circuit_breaker);
       console.log("on_position_coin_list", on_position_coin_list);
       console.log("coin_info[0].order", coin_info[0].order);
       console.log("queue", queue);
 
-      if (trade.is_circuit_breaker || trade.is_onCreate_order) return;
+      if (trade.is_circuit_breaker || trade.is_onCreate_order) {
+        return;
+      }
+      console.log(
+        "Date.now() - last_updated_time",
+        Date.now() - last_updated_time
+      );
       if (Date.now() - last_updated_time > 7000) {
         for (const coin of coin_info) {
           await check_send_order(coin.symbol);
@@ -94,48 +127,22 @@ const main = async () => {
     }, 1000);
   }, 4500);
 
-  /**
-   * 체결 정보 실시간으로 받는곳
-   */
-  wsUpdate.on("update", async (data) => {
-    console.log("##############");
-    console.log(data);
-    console.log("##############");
-
-    for (const q of queue) {
-      if (q.symbol == data.data.symbol && q.side == data.data.side) return;
-    }
-    queue.push({
-      symbol: data.data.symbol,
-      side: data.data.side,
+  setTimeout(() => {
+    ws.close("trade.*");
+    coin_info.forEach((e) => {
+      ws.subscribe(`trade.${e.symbol}`);
     });
-  });
 
-  ws.close("trade.*");
-  coin_info.forEach((e) => {
-    ws.subscribe(`trade.${e.symbol}`);
-  });
+    ws.on("update", async (data) => {
+      // 50틱 이상 가격에 걸어줌.
+      const symbol = data.data[0].symbol;
+      const price = parseFloat(data.data[0].price);
 
-  ws.on("update", async (data) => {
-    if (trade.using_money_rate == 0) return;
-    // 50틱 이상 가격에 걸어줌.
-    const symbol = data.data[0].symbol;
-    const price = parseFloat(data.data[0].price);
+      console.log("!@#", symbol, " => ", price);
 
-    console.log(symbol, " => ", price);
-    if ((coinObject = coin_info.find((e) => symbol == e.symbol))) {
-      const tick_size = parseFloat(coinObject.tick_size);
+      if (coin_info.find((e) => symbol == e.symbol)) {
+        let idx = coin_info.findIndex((e) => e.symbol == symbol);
 
-      let idx = coin_info.findIndex((e) => e.symbol == symbol);
-
-      // 최초 포지션 진입하고 order_id를 저장함.
-      if (coinObject.order.length == 0) {
-        if (trade.is_onCreate_order) return;
-        trade.is_onCreate_order = true;
-        await create_limit_order(symbol, tick_size, [1, 2, 3, 4]);
-        coin_info[idx].update_time = Date.now();
-        trade.is_onCreate_order = false;
-      } else {
         console.log("이거 뭐나옴 ? ", Date.now() - coin_info[idx].update_time);
         if (
           Date.now() - coin_info[idx].update_time >
@@ -149,10 +156,10 @@ const main = async () => {
             console.log("이전가격과 동일하여 replace order 부분 return");
             return;
           }
-
           /**
            * high_position_price + tick_size * TRADE.call_put_tick_size,
            */
+          console.log("가격 업데이트");
 
           // idx는 coin_info에서 해당하는 coin이 몇번째에 있는지의 대한 값임.
           // 1은 limit order가 위에서부터 몇번째인지 >?
@@ -164,13 +171,13 @@ const main = async () => {
 
           const res4 = await replace_order(symbol, price, idx, 4);
 
-          console.log(res4);
+          console.log("REPLACE ORDER", res4);
 
           coin_info[idx].update_time = Date.now();
         }
       }
-    }
-  });
+    });
+  }, 4000);
 
   /**
    * 거래가 체결되면 order_id 다시한번 받아와서 정렬해줘야댐.... 헐..

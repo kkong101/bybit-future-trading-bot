@@ -23,20 +23,15 @@ module.exports = {
     // }
   },
   check_send_order: async (symbol) => {
-    trade.is_onCreate_order = true;
+    console.log("???");
     const coinObject = coin_info.find((coin) => coin.symbol == symbol);
-
+    console.log("asdasd", coinObject);
     if (coinObject) {
       await check_on_position_list(symbol);
       await check_limit_order_list(symbol);
-
       await check_position_change(symbol);
-
       await check_position_order(symbol);
-
       await setBalance();
     }
-
-    trade.is_onCreate_order = false;
   },
 };

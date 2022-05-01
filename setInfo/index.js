@@ -24,6 +24,7 @@ module.exports = {
       for (const result of res.result) {
         if (COINS.white_list.find((bl) => bl.symbol == result.name)) {
           const current_price = await get_current_price(result.name);
+
           coin_info.push({
             symbol: result.name,
             tick_size: parseFloat(result.price_filter.tick_size),
@@ -110,21 +111,37 @@ module.exports = {
       symbol: symbol,
     });
 
+    for (const tt of on_position_coin_list) {
+      console.log("판매까지 남은 시간 => ", Date.now() - tt.time);
+    }
+
     if (res.result != null) {
       for (const position of res.result) {
         // 만약 구매한 상태라면,
-        if (position.size != 0) {
+        if (parseFloat(position.size) != 0) {
           let isDuplicated = false;
           for (const our_list of on_position_coin_list) {
             if (our_list.symbol == symbol && our_list.side == position.side) {
               isDuplicated = true;
+              // 추매인지 확인 진행
+              if (parseFloat(position.size) > parseFloat(our_list.qty)) {
+                // 만약 추매이면,
+                // 구입 시간 갱신
+                our_list.time = Date.now();
+                // 수량 갱신
+                our_list.qty = position.size;
+                // 가격 갱신
+                our_list.price = position.entry_price;
+              }
             }
           }
           if (!isDuplicated) {
+            console.log("on_position_coin_list에 들어감 !!");
             on_position_coin_list.push({
               symbol: symbol,
               side: position.side,
               price: position.entry_price,
+              qty: position.size,
               time: Date.now(),
             });
           }
@@ -220,6 +237,28 @@ module.exports = {
       const idx = coinObject.order.findIndex((e) => e.position == 4);
       if (idx == -1) return;
       coinObject.order[idx].position = 3;
+    }
+
+    // on_position_list에 1번 혹은 2번 거래가 없고, 2번만 걸려 있을 시 1번 거래 넣어줌.
+    if (
+      on_position_coin_list.find(
+        (e) => e.symbol == symbol && e.side == "Buy"
+      ) == null &&
+      absent_position_list.includes(1) &&
+      !absent_position_list.includes(2)
+    ) {
+      await create_limit_order(coinObject.symbol, coinObject.tick_size, [1]);
+    }
+
+    // on_position_list에 3번 혹은 4번 거래가 없고, 3번만 걸려 있을 시 4번 거래 넣어줌.
+    if (
+      on_position_coin_list.find(
+        (e) => e.symbol == symbol && e.side == "Sell"
+      ) == null &&
+      absent_position_list.includes(3) &&
+      !absent_position_list.includes(4)
+    ) {
+      await create_limit_order(coinObject.symbol, coinObject.tick_size, [4]);
     }
   },
 
