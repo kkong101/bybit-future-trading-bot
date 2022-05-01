@@ -101,7 +101,12 @@ const main = async () => {
       console.log("trade.is_onCreate_order", trade.is_onCreate_order);
       console.log("trade.is_circuit_breaker", trade.is_circuit_breaker);
       console.log("on_position_coin_list", on_position_coin_list);
-      console.log("coin_info[0].order", coin_info[0].order);
+      let i = 0;
+      for (const coin of coin_info) {
+        console.log(coin_info[i].symbol, "coin_info.order ", coin.order);
+        i++;
+      }
+
       console.log("queue", queue);
 
       if (trade.is_circuit_breaker || trade.is_onCreate_order) {
@@ -154,8 +159,6 @@ const main = async () => {
       const res3 = await replace_order(coin.symbol, price, idx, 3);
 
       const res4 = await replace_order(coin.symbol, price, idx, 4);
-
-      console.log("REPLACE ORDER", res4);
 
       if (res1 && res2 && res3 && res4) {
         coin_info[idx].previous_price = price;

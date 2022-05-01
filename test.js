@@ -83,13 +83,18 @@ const wsConfigUpdate = {
 // };
 
 const test123 = async () => {
-  const test = [
-    { id: "87b0d70b-af04-465f-9d4e-2a605d0f351a", position: 2 },
-    { id: "c9f360fa-4a31-4d0f-8a20-dbdf7df53384", position: 3 },
-    { id: "8c80a73a-9433-45a0-892d-82e64423e19d", position: 4 },
-  ];
-
-  console.log(test.find((e) => e.position == 2));
+  const res = await getAxios("/private/linear/order/search", {
+    symbol: "BTCUSDT",
+  });
+  console.log(res);
 };
 
-test123();
+const qwedq = () => {
+  const test = [1];
+  test.length;
+  if (test != null) {
+    console.log("true");
+  }
+};
+
+qwedq();

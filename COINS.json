@@ -1,5 +1,8 @@
 {
-  "white_list": [{ "symbol": "BTCUSDT", "tick_size": 0, "percentage": 0 }],
+  "white_list": [
+    { "symbol": "BTCUSDT", "tick_size": 0, "percentage": 0 },
+    { "symbol": "ETHUSDT", "tick_size": 0, "percentage": 0 }
+  ],
   "black_list": [
     { "symbol": "ETHUSDT", "tick_size": 0, "percentage": 0 },
     { "symbol": "EOSUSDT", "tick_size": 0, "percentage": 0 },

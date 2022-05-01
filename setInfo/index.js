@@ -150,29 +150,23 @@ module.exports = {
     }
   },
   check_limit_order_list: async (symbol) => {
-    const updated_order_list = [];
-
     const idx = coin_info.findIndex((e) => e.symbol == symbol);
 
     const res = await getAxios("/private/linear/order/search", {
       symbol,
     });
 
-    if (res.result != null) {
+    if (res.result.length != 0) {
+      coin_info[idx].order = [];
       for (const order of res.result) {
-        if (
-          order.order_status == "New" ||
-          order.order_status == "PartiallyFilled"
-        ) {
+        if (order.order_status == "New") {
           const position = order.order_link_id.split("-")[3];
-          updated_order_list.push({
+          coin_info[idx].order.push({
             id: order.order_id,
             position: parseInt(position),
           });
         }
       }
-      // 업데이트 된 내용으로 변경해줌.
-      coin_info[idx].order = updated_order_list;
     }
   },
   check_position_change: async (symbol) => {
@@ -262,12 +256,10 @@ module.exports = {
 
   check_position_order: async (symbol) => {
     for (const position of on_position_coin_list) {
-      console.log("check_position_order123", position);
       if (position.symbol == symbol) {
         const current_price = await get_current_price(symbol);
 
-        console.log("current_price :", current_price);
-        console.log("Date.now() - position.time", Date.now() - position.time);
+        console.log("포지션 정리까지 남은 시간 ", Date.now() - position.time);
 
         // 해당하는 포지션 작업이 왔다면, 설정파일에 있는 시간를 체크함
         if (

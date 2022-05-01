@@ -11,8 +11,7 @@ module.exports = {
   order_long_position: async (symbol, price, order_link_id) => {
     // 얼마나 살건지 가격 측정하는 부분.
     const order_money =
-      (trade.total_money * trade.using_money_rate) /
-      (TRADE.additional_position + TRADE.additional_position);
+      (trade.total_money * trade.using_money_rate) / (4 * coin_info.length);
 
     const coinObject = coin_info.find((e) => e.symbol == symbol);
 
@@ -23,10 +22,12 @@ module.exports = {
     qty = qty - namo;
 
     if (qty < coinObject.min_trading_qty) {
+      console.log("최소 수량보다 주문 수량이 더 적음..");
       // 만약에 돈이 없다면,
       return;
     }
 
+    // 청산가 정하는 부분 .
     const stop_loss = price - price * TRADE.close_position.loss.loss_percentage;
     const take_profit =
       price + price * TRADE.close_position.profit.profit_percentage;
@@ -46,14 +47,12 @@ module.exports = {
     };
 
     const res = await postAxios("/private/linear/order/create", params);
-    console.log("@@", res);
     return res;
   },
   order_short_position: async (symbol, price, order_link_id) => {
     // 얼마나 살건지 가격 측정하는 부분.
     const order_money =
-      (trade.total_money * trade.using_money_rate) /
-      (TRADE.additional_position + TRADE.additional_position);
+      (trade.total_money * trade.using_money_rate) / (4 * coin_info.length);
 
     const coinObject = coin_info.find((e) => e.symbol == symbol);
 
@@ -162,6 +161,7 @@ module.exports = {
     const res = await postAxios("/private/linear/order/replace", params);
     if ((res.ret_msg = "OK")) {
       console.log("가격 업데이트 ###### ");
+      console.log("rate_limit", res.rate_limit, "###############");
       return true;
     }
   },
