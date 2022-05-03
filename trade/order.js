@@ -27,6 +27,12 @@ module.exports = {
       return;
     }
 
+    let precision_num = 0;
+    const stringed_number = price.toString();
+    if (stringed_number.split(".")[0].length != stringed_number.length) {
+      precision_num = stringed_number.split(".")[1].length;
+    }
+
     // 청산가 정하는 부분 .
     const stop_loss = price - price * TRADE.close_position.loss.loss_percentage;
     const take_profit =
@@ -42,8 +48,9 @@ module.exports = {
       reduce_only: false,
       close_on_trigger: false,
       order_link_id: order_link_id,
-      take_profit: take_profit,
-      stop_loss: stop_loss,
+      take_profit: take_profit.toFixed(precision_num),
+      stop_loss: stop_loss.toFixed(precision_num),
+      position_idx: 1,
     };
 
     const res = await postAxios("/private/linear/order/create", params);
@@ -66,6 +73,12 @@ module.exports = {
       return;
     }
 
+    let precision_num = 0;
+    const stringed_number = price.toString();
+    if (stringed_number.split(".")[0].length != stringed_number.length) {
+      precision_num = stringed_number.split(".")[1].length;
+    }
+
     const stop_loss = price + price * TRADE.close_position.loss.loss_percentage;
     const take_profit =
       price - price * TRADE.close_position.profit.profit_percentage;
@@ -80,8 +93,9 @@ module.exports = {
       reduce_only: false,
       close_on_trigger: false,
       order_link_id: order_link_id,
-      take_profit: take_profit,
-      stop_loss: stop_loss,
+      take_profit: take_profit.toFixed(precision_num),
+      stop_loss: stop_loss.toFixed(precision_num),
+      position_idx: 2,
     };
     const res = await postAxios("/private/linear/order/create", params);
     return res;
@@ -135,6 +149,12 @@ module.exports = {
 
     if (order_id == null) return;
 
+    let precision_num = 0;
+    const stringed_number = price.toString();
+    if (stringed_number.split(".")[0].length != stringed_number.length) {
+      precision_num = stringed_number.split(".")[1].length;
+    }
+
     let stop_loss = 0;
     let take_profit = 0;
     // Target Profit, Stop Loss(익절, 손절) 구하는 부분
@@ -149,6 +169,9 @@ module.exports = {
         price + price * TRADE.close_position.profit.profit_percentage;
     }
 
+    stop_loss = stop_loss.toFixed(precision_num);
+    take_profit = take_profit.toFixed(precision_num);
+
     const params = {
       symbol: symbol,
       order_id: order_id,
@@ -159,10 +182,15 @@ module.exports = {
     };
 
     const res = await postAxios("/private/linear/order/replace", params);
+
     if ((res.ret_msg = "OK")) {
-      console.log("가격 업데이트 ###### ");
-      console.log("rate_limit", res.rate_limit, "###############");
+      console.log(symbol, "## 가격 업데이트 ###### ");
+      console.log("## rate_limit", res.rate_limit_status, "###############");
+      console.log("## rate_limit", res, "###############");
       return true;
+    } else {
+      console.log("##### REPLACE_ORDER 실패 #####");
+      console.log("/private/linear/order/replace", res);
     }
   },
 
@@ -211,7 +239,6 @@ module.exports = {
     });
   },
   close_one_position: async (symbol, side) => {
-    trade.is_onCreate_order = true;
     const res = await getAxios("/private/linear/position/list", {
       symbol: symbol,
     });
@@ -241,7 +268,6 @@ module.exports = {
           on_position_coin_list.splice(idx, 1);
 
           console.log("익절 / 손절해서 on_position_list에서 제외 해줌.");
-          trade.is_onCreate_order = false;
         }
 
         if (res.rate_limit_status == "0") {
@@ -254,7 +280,6 @@ module.exports = {
 
             setTimeout(() => {
               trade.is_circuit_breaker = false;
-              trade.is_onCreate_order = false;
             }, 1000);
           }, after_time + 500);
         }
@@ -264,7 +289,6 @@ module.exports = {
         return;
       }
     }
-    trade.is_onCreate_order = false;
   },
   get_current_price: async (symbol) => {
     const kline_res = await getAxios("/public/linear/kline", {
@@ -278,7 +302,6 @@ module.exports = {
   },
   // limit_rate가 걸렸을경우 전부 대기시키고 1순위로 주문을 넣어줘야댐.
   create_limit_order: async (symbol, tick_size, order_position_list) => {
-    trade.is_onCreate_order = true;
     const idx = coin_info.findIndex((e) => e.symbol == symbol);
 
     const thisModule = require("./order");
@@ -305,12 +328,13 @@ module.exports = {
         `create-short-limit-1-${Date.now()}`
       );
 
+      console.log(short_res2);
+
       if (short_res2.ret_msg == "OK") {
         coin_info[idx].order.push({
           id: short_res2.result.order_id,
           position: 1,
         });
-        trade.is_onCreate_order = false;
       }
     }
     if (order_position_list.includes(2)) {
@@ -319,13 +343,13 @@ module.exports = {
         high_position_price,
         `create-short-limit-2-${Date.now()}`
       );
+      console.log(short_res1);
 
       if (short_res1.ret_msg == "OK") {
         coin_info[idx].order.push({
           id: short_res1.result.order_id,
           position: 2,
         });
-        trade.is_onCreate_order = false;
       }
     }
     if (order_position_list.includes(3)) {
@@ -334,12 +358,13 @@ module.exports = {
         low_position_price,
         `create-long-limit-3-${Date.now()}`
       );
+
+      console.log(long_res1);
       if (long_res1.ret_msg == "OK") {
         coin_info[idx].order.push({
           id: long_res1.result.order_id,
           position: 3,
         });
-        trade.is_onCreate_order = false;
       }
     }
     if (order_position_list.includes(4)) {
@@ -348,12 +373,14 @@ module.exports = {
         low_position_price - tick_size * TRADE.call_put_tick_size,
         `create-long-limit-4-${Date.now()}`
       );
+
+      console.log(long_res2);
+
       if (long_res2.ret_msg == "OK") {
         coin_info[idx].order.push({
           id: long_res2.result.order_id,
           position: 4,
         });
-        trade.is_onCreate_order = false;
       }
     }
   },

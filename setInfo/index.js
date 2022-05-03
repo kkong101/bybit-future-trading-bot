@@ -1,5 +1,5 @@
 const { coin_info } = require("../globalState/index");
-const { getAxios } = require("../axios/index");
+const { getAxios, postAxios } = require("../axios/index");
 const {
   circuit_breaker,
   on_position_coin_list,
@@ -115,7 +115,7 @@ module.exports = {
       console.log("판매까지 남은 시간 => ", Date.now() - tt.time);
     }
 
-    if (res.result != null) {
+    if (res.result.length != 0) {
       for (const position of res.result) {
         // 만약 구매한 상태라면,
         if (parseFloat(position.size) != 0) {
@@ -184,6 +184,8 @@ module.exports = {
       }
     }
 
+    const thisModule = require("./index");
+
     // 만약 1, 2의 포지션이 없을 경우에 =>
     if (absent_position_list.includes(1) && absent_position_list.includes(2)) {
       // [1,2] 에 주문을 넣어준다.
@@ -199,6 +201,7 @@ module.exports = {
           coinObject.tick_size,
           [1, 2]
         );
+        await thisModule.set_isolated_mode(coinObject.symbol);
       }
     } else if (absent_position_list.includes(2)) {
       // 만약 2의 포지션이 없을 경우에 =>
@@ -223,6 +226,7 @@ module.exports = {
           coinObject.tick_size,
           [3, 4]
         );
+        await thisModule.set_isolated_mode(coinObject.symbol);
       }
     } else if (absent_position_list.includes(3)) {
       // 4을 3으로 옮겨준다.
@@ -240,6 +244,7 @@ module.exports = {
       !absent_position_list.includes(2)
     ) {
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [1]);
+      await thisModule.set_isolated_mode(coinObject.symbol);
     }
 
     // on_position_list에 3번 혹은 4번 거래가 없고, 3번만 걸려 있을 시 4번 거래 넣어줌.
@@ -251,6 +256,7 @@ module.exports = {
       !absent_position_list.includes(4)
     ) {
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [4]);
+      await thisModule.set_isolated_mode(coinObject.symbol);
     }
   },
 
@@ -284,5 +290,17 @@ module.exports = {
         }
       }
     }
+  },
+  set_isolated_mode: async (symbol) => {
+    const params = {
+      symbol: symbol,
+      is_isolated: true,
+      buy_leverage: 1,
+      sell_leverage: 1,
+    };
+
+    await postAxios("/private/linear/position/switch-isolated", params);
+
+    console.log("고립으로 mode 변경 ");
   },
 };

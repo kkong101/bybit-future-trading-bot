@@ -89,12 +89,20 @@ const test123 = async () => {
   console.log(res);
 };
 
-const qwedq = () => {
-  const test = [1];
-  test.length;
-  if (test != null) {
-    console.log("true");
+const qwedq = async () => {
+  const res = await getAxios("/private/linear/position/list", {
+    symbol: "BTCUSDT",
+  });
+  console.log(res);
+};
+
+const qwdefw = () => {
+  const test = 43.9842;
+  let precision_num = 0;
+  const stringed_number = test.toString();
+  if (stringed_number.split(".")[0].length != stringed_number.length) {
+    console.log("소수점 : ", stringed_number.split(".")[1].length);
   }
 };
 
-qwedq();
+qwdefw();

@@ -34,8 +34,8 @@ module.exports = {
               "/private/linear/position/set-leverage",
               {
                 symbol: "BTCUSDT",
-                buy_leverage: 3,
-                sell_leverage: 3,
+                buy_leverage: e.leverage,
+                sell_leverage: e.leverage,
               }
             );
           }

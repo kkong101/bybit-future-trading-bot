@@ -21,7 +21,11 @@ const {
 } = require("./trade/order");
 
 const { check_order, check_send_order } = require("./subscribe/update");
-const { getCoinInfo, check_on_position_list } = require("./setInfo/index");
+const {
+  getCoinInfo,
+  check_on_position_list,
+  set_isolated_mode,
+} = require("./setInfo/index");
 
 const API_KEY = SECRET.bybit.API_KEY;
 const PRIVATE_KEY = SECRET.bybit.API_SECRET;
@@ -62,6 +66,7 @@ const main = async () => {
       const tick_size = parseFloat(coinObject.tick_size);
       await create_limit_order(coin.symbol, tick_size, [1, 2, 3, 4]);
       coinObject.update_time = Date.now();
+      set_isolated_mode(coin.symbol);
     }
   }, 1500);
 
@@ -70,7 +75,13 @@ const main = async () => {
    */
 
   const queue = [];
-  let last_updated_time = Date.now();
+  const last_updated_time = [];
+  for (const coin of COINS.white_list) {
+    last_updated_time.push({
+      symbol: coin.symbol,
+      updated: Date.now(),
+    });
+  }
 
   setTimeout(() => {
     /**
@@ -112,22 +123,24 @@ const main = async () => {
       if (trade.is_circuit_breaker || trade.is_onCreate_order) {
         return;
       }
-      console.log(
-        "Date.now() - last_updated_time",
-        Date.now() - last_updated_time
-      );
-      if (Date.now() - last_updated_time > 7000) {
-        for (const coin of coin_info) {
+      last_updated_time.forEach((e) => {
+        console.log(e.symbol, " =>  updated_time : ", Date.now() - e.updated);
+      });
+
+      for (const coin of last_updated_time) {
+        if (Date.now() - coin.updated > 7000) {
           await check_send_order(coin.symbol);
+          coin.updated = Date.now();
         }
-        last_updated_time = Date.now();
-        return;
       }
+
       if (queue.length == 0) return;
 
       while (true) {
-        await check_send_order(queue.shift().symbol);
-        last_updated_time = Date.now();
+        const symbol = queue.shift().symbol;
+        await check_send_order(symbol);
+        const idx = last_updated_time.findIndex((e) => e.symbol == symbol);
+        last_updated_time[idx].updated = Date.now();
         if (queue.length == 0) return;
       }
     }, 1000);
@@ -151,6 +164,7 @@ const main = async () => {
         );
         return;
       }
+      console.log(coin.symbol, " 시작 #####");
 
       const res1 = await replace_order(coin.symbol, price, idx, 1);
 
@@ -164,6 +178,7 @@ const main = async () => {
         coin_info[idx].previous_price = price;
         coin_info[idx].update_time = Date.now();
       }
+      console.log(coin.symbol, " 끝 #####");
     }
   }, TRADE.order_interval * 1000);
 
