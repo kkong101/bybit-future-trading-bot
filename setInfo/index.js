@@ -11,7 +11,7 @@ const {
   create_limit_order,
   close_one_position,
 } = require("../trade/order");
-const { setBalance } = require("../trade/deposit");
+const { set_isolated_mode } = require("../setInfo/index");
 const COINS = require("../COINS.json");
 const TRADE = require("../TRADE.json");
 
@@ -115,7 +115,7 @@ module.exports = {
       console.log("판매까지 남은 시간 => ", Date.now() - tt.time);
     }
 
-    if (res.result.length != 0) {
+    if (res.result || res.result.length != 0) {
       for (const position of res.result) {
         // 만약 구매한 상태라면,
         if (parseFloat(position.size) != 0) {
@@ -147,6 +147,19 @@ module.exports = {
           }
         }
       }
+      /**
+       * 교차인지 체크해서 만약 교차이면 isolated로 변경
+       */
+      let is_isolated = true;
+      for (const position of res.result) {
+        if (position.size != 0 && !position.is_isolated) is_isolated = false;
+      }
+
+      if (!is_isolated) await set_isolated_mode(symbol);
+
+      /**
+       * The End ###
+       */
     }
   },
   check_limit_order_list: async (symbol) => {
@@ -184,8 +197,6 @@ module.exports = {
       }
     }
 
-    const thisModule = require("./index");
-
     // 만약 1, 2의 포지션이 없을 경우에 =>
     if (absent_position_list.includes(1) && absent_position_list.includes(2)) {
       // [1,2] 에 주문을 넣어준다.
@@ -201,7 +212,6 @@ module.exports = {
           coinObject.tick_size,
           [1, 2]
         );
-        await thisModule.set_isolated_mode(coinObject.symbol);
       }
     } else if (absent_position_list.includes(2)) {
       // 만약 2의 포지션이 없을 경우에 =>
@@ -226,7 +236,6 @@ module.exports = {
           coinObject.tick_size,
           [3, 4]
         );
-        await thisModule.set_isolated_mode(coinObject.symbol);
       }
     } else if (absent_position_list.includes(3)) {
       // 4을 3으로 옮겨준다.
@@ -244,7 +253,6 @@ module.exports = {
       !absent_position_list.includes(2)
     ) {
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [1]);
-      await thisModule.set_isolated_mode(coinObject.symbol);
     }
 
     // on_position_list에 3번 혹은 4번 거래가 없고, 3번만 걸려 있을 시 4번 거래 넣어줌.
@@ -256,7 +264,6 @@ module.exports = {
       !absent_position_list.includes(4)
     ) {
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [4]);
-      await thisModule.set_isolated_mode(coinObject.symbol);
     }
   },
 

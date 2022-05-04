@@ -66,7 +66,6 @@ const main = async () => {
       const tick_size = parseFloat(coinObject.tick_size);
       await create_limit_order(coin.symbol, tick_size, [1, 2, 3, 4]);
       coinObject.update_time = Date.now();
-      set_isolated_mode(coin.symbol);
     }
   }, 1500);
 
@@ -144,43 +143,44 @@ const main = async () => {
         if (queue.length == 0) return;
       }
     }, 1000);
-  }, 4500);
+  }, 5500);
 
   /**
    * Websocket으로 불러오는 부분 => API로 불러오게 변경
    */
+  setTimeout(() => {
+    setInterval(async () => {
+      for (const coin of COINS.white_list) {
+        const price = await get_current_price(coin.symbol);
+        const idx = coin_info.findIndex((e) => e.symbol == coin.symbol);
 
-  setInterval(async () => {
-    for (const coin of COINS.white_list) {
-      const price = await get_current_price(coin.symbol);
-      const idx = coin_info.findIndex((e) => e.symbol == coin.symbol);
+        if (
+          coin_info[idx].previous_price + coin_info[idx].tick_size >= price &&
+          coin_info[idx].previous_price - coin_info[idx].tick_size <= price
+        ) {
+          console.log(
+            "이전가격과 동일하여 replace order 부분 return ################"
+          );
+          return;
+        }
+        console.log(coin.symbol, " 시작 #####");
 
-      if (
-        coin_info[idx].previous_price + coin_info[idx].tick_size >= price &&
-        coin_info[idx].previous_price - coin_info[idx].tick_size <= price
-      ) {
-        console.log(
-          "이전가격과 동일하여 replace order 부분 return ################"
-        );
-        return;
+        const res1 = await replace_order(coin.symbol, price, idx, 1);
+
+        const res2 = await replace_order(coin.symbol, price, idx, 2);
+
+        const res3 = await replace_order(coin.symbol, price, idx, 3);
+
+        const res4 = await replace_order(coin.symbol, price, idx, 4);
+
+        if (res1 && res2 && res3 && res4) {
+          coin_info[idx].previous_price = price;
+          coin_info[idx].update_time = Date.now();
+        }
+        console.log(coin.symbol, " 끝 #####");
       }
-      console.log(coin.symbol, " 시작 #####");
-
-      const res1 = await replace_order(coin.symbol, price, idx, 1);
-
-      const res2 = await replace_order(coin.symbol, price, idx, 2);
-
-      const res3 = await replace_order(coin.symbol, price, idx, 3);
-
-      const res4 = await replace_order(coin.symbol, price, idx, 4);
-
-      if (res1 && res2 && res3 && res4) {
-        coin_info[idx].previous_price = price;
-        coin_info[idx].update_time = Date.now();
-      }
-      console.log(coin.symbol, " 끝 #####");
-    }
-  }, TRADE.order_interval * 1000);
+    }, TRADE.order_interval * 1000);
+  }, 6000);
 
   /**
    * THE END ###

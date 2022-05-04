@@ -104,8 +104,6 @@ module.exports = {
   replace_order: async (symbol, price, idx, position) => {
     const coinObject = coin_info[idx];
 
-    coin_info[idx].update_time = Date.now();
-
     // 얼마어치 살껀지 책정하는 부분
     const order_money =
       (trade.total_money * trade.using_money_rate) /
@@ -307,10 +305,21 @@ module.exports = {
     const thisModule = require("./order");
     const current_price = await thisModule.get_current_price(symbol);
 
-    const high_position_price =
+    let high_position_price =
       current_price + tick_size * TRADE.call_put_tick_size;
-    const low_position_price =
+    let low_position_price =
       current_price - tick_size * TRADE.call_put_tick_size;
+
+    let precision_num = 0;
+    const stringed_number = tick_size.toString();
+    if (stringed_number.split(".")[0].length != stringed_number.length) {
+      precision_num = stringed_number.split(".")[1].length;
+    }
+
+    high_position_price = parseFloat(
+      high_position_price.toFixed(precision_num)
+    );
+    low_position_price = parseFloat(low_position_price.toFixed(precision_num));
 
     for (const position_order of order_position_list) {
       // 이미 해당 포지션에 거래가 존재한다면 return 시킴.
@@ -321,14 +330,21 @@ module.exports = {
       }
     }
 
-    if (order_position_list.includes(1)) {
+    if (
+      order_position_list.includes(1) &&
+      !coin_info[idx].order.find((e) => e.position == 1)
+    ) {
       const short_res2 = await thisModule.order_short_position(
         symbol,
-        high_position_price + tick_size * TRADE.call_put_tick_size,
+        parseFloat(
+          (high_position_price + tick_size * TRADE.call_put_tick_size).toFixed(
+            precision_num
+          )
+        ),
         `create-short-limit-1-${Date.now()}`
       );
 
-      console.log(short_res2);
+      console.log(symbol, "short_res2", short_res2);
 
       if (short_res2.ret_msg == "OK") {
         coin_info[idx].order.push({
@@ -337,13 +353,16 @@ module.exports = {
         });
       }
     }
-    if (order_position_list.includes(2)) {
+    if (
+      order_position_list.includes(2) &&
+      !coin_info[idx].order.find((e) => e.position == 2)
+    ) {
       const short_res1 = await thisModule.order_short_position(
         symbol,
         high_position_price,
         `create-short-limit-2-${Date.now()}`
       );
-      console.log(short_res1);
+      console.log(symbol, "short_res1", short_res1);
 
       if (short_res1.ret_msg == "OK") {
         coin_info[idx].order.push({
@@ -352,14 +371,17 @@ module.exports = {
         });
       }
     }
-    if (order_position_list.includes(3)) {
+    if (
+      order_position_list.includes(3) &&
+      !coin_info[idx].order.find((e) => e.position == 3)
+    ) {
       const long_res1 = await thisModule.order_long_position(
         symbol,
         low_position_price,
         `create-long-limit-3-${Date.now()}`
       );
 
-      console.log(long_res1);
+      console.log(symbol, "long_res1", long_res1);
       if (long_res1.ret_msg == "OK") {
         coin_info[idx].order.push({
           id: long_res1.result.order_id,
@@ -367,14 +389,21 @@ module.exports = {
         });
       }
     }
-    if (order_position_list.includes(4)) {
+    if (
+      order_position_list.includes(4) &&
+      !coin_info[idx].order.find((e) => e.position == 4)
+    ) {
       const long_res2 = await thisModule.order_long_position(
         symbol,
-        low_position_price - tick_size * TRADE.call_put_tick_size,
+        parseFloat(
+          (low_position_price - tick_size * TRADE.call_put_tick_size).toFixed(
+            precision_num
+          )
+        ),
         `create-long-limit-4-${Date.now()}`
       );
 
-      console.log(long_res2);
+      console.log(symbol, "long_res2", long_res2);
 
       if (long_res2.ret_msg == "OK") {
         coin_info[idx].order.push({

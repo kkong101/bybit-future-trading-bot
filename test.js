@@ -22,6 +22,7 @@ const {
   check_on_position_list,
   check_limit_order_list,
   getCoinInfo,
+  set_isolated_mode,
 } = require("./setInfo/index");
 const TRADE = require("./TRADE.json");
 
@@ -96,13 +97,20 @@ const qwedq = async () => {
   console.log(res);
 };
 
-const qwdefw = () => {
-  const test = 43.9842;
-  let precision_num = 0;
-  const stringed_number = test.toString();
-  if (stringed_number.split(".")[0].length != stringed_number.length) {
-    console.log("소수점 : ", stringed_number.split(".")[1].length);
-  }
+const qwdefw = async () => {
+  const res = await getAxios("/private/linear/position/list", {
+    symbol: "ETHUSDT",
+  });
+
+  console.log(res);
+
+  // const test = await set_isolated_mode("ETHUSDT");
+
+  // console.log(test);
+
+  // const res2 = await set_isolated_mode("ETHUSDT");
+
+  // console.log(res2);
 };
 
 qwdefw();

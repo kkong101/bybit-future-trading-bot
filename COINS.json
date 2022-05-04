@@ -1,7 +1,15 @@
 {
   "white_list": [
     { "symbol": "BTCUSDT", "tick_size": 0, "percentage": 0 },
-    { "symbol": "ETHUSDT", "tick_size": 0, "percentage": 0 }
+    { "symbol": "ETHUSDT", "tick_size": 0, "percentage": 0 },
+    { "symbol": "XRPUSDT", "tick_size": 0, "percentage": 0 },
+    { "symbol": "LTCUSDT", "tick_size": 0, "percentage": 0 },
+    { "symbol": "ANCUSDT", "tick_size": 0, "percentage": 0 },
+    { "symbol": "KDAUSDT", "tick_size": 0, "percentage": 0 },
+    { "symbol": "APEUSDT", "tick_size": 0, "percentage": 0 },
+    { "symbol": "GMTUSDT", "tick_size": 0, "percentage": 0 },
+    { "symbol": "OGNUSDT", "tick_size": 0, "percentage": 0 },
+    { "symbol": "BSWUSDT", "tick_size": 0, "percentage": 0 }
   ],
   "black_list": [
     { "symbol": "ETHUSDT", "tick_size": 0, "percentage": 0 },
