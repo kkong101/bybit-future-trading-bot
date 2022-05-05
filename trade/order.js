@@ -33,6 +33,12 @@ module.exports = {
       precision_num = stringed_number.split(".")[1].length;
     }
 
+    const splited = qty.toString().split(".");
+    if (splited.length == 2 && splited[1].length > 6) {
+      const rest = qty - qty.toFixed(5);
+      qty = qty - rest;
+    }
+
     // 청산가 정하는 부분 .
     const stop_loss = price - price * TRADE.close_position.loss.loss_percentage;
     const take_profit =
@@ -68,6 +74,16 @@ module.exports = {
     const namo = qty % coinObject.qty_step;
 
     qty = qty - namo;
+
+    const splited = qty.toString().split(".");
+    if (splited.length == 2 && splited[1].length > 6) {
+      const rest = qty - qty.toFixed(5);
+      qty = qty - rest;
+    }
+
+    /**
+     * qty 소수점이 길때,
+     */
     if (qty < coinObject.min_trading_qty) {
       // 만약에 돈이 없다면,
       return;
@@ -82,7 +98,6 @@ module.exports = {
     const stop_loss = price + price * TRADE.close_position.loss.loss_percentage;
     const take_profit =
       price - price * TRADE.close_position.profit.profit_percentage;
-
     const params = {
       side: "Sell",
       symbol: symbol,

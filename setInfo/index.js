@@ -155,7 +155,10 @@ module.exports = {
         if (position.size != 0 && !position.is_isolated) is_isolated = false;
       }
 
-      if (!is_isolated) await set_isolated_mode(symbol);
+      if (!is_isolated) {
+        const thisModule = require("./index");
+        await thisModule.set_isolated_mode(symbol);
+      }
 
       /**
        * The End ###

@@ -98,19 +98,12 @@ const qwedq = async () => {
 };
 
 const qwdefw = async () => {
-  const res = await getAxios("/private/linear/position/list", {
-    symbol: "ETHUSDT",
-  });
-
-  console.log(res);
-
-  // const test = await set_isolated_mode("ETHUSDT");
-
-  // console.log(test);
-
-  // const res2 = await set_isolated_mode("ETHUSDT");
-
-  // console.log(res2);
+  let qty = 0.6000000000000001;
+  const splited = qty.toString().split(".");
+  if (splited.length == 2 && splited[1].length > 6) {
+    const test = qty - qty.toFixed(4);
+    console.log(qty - test);
+  }
 };
 
 qwdefw();
