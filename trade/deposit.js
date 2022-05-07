@@ -16,7 +16,6 @@ module.exports = {
           order_list.push(result.order_id);
         }
       }
-
       for (const order_id of order_list) {
         trade.is_circuit_breaker = true;
         await postAxios("/private/linear/order/cancel", {
