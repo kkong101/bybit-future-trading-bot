@@ -32,6 +32,7 @@ module.exports = {
             min_trading_qty: parseFloat(result.lot_size_filter.min_trading_qty),
             qty_step: parseFloat(result.lot_size_filter.qty_step),
             previous_price: current_price,
+            current_price: current_price,
             order: [],
           });
         }
@@ -112,7 +113,7 @@ module.exports = {
     });
 
     for (const tt of on_position_coin_list) {
-      console.log(symbol, "구매한지 얼마나 지남? => ", Date.now() - tt.time);
+      console.log(tt.symbol, "구매한지 얼마나 지남? => ", Date.now() - tt.time);
     }
 
     if (res.result || res.result.length != 0) {
@@ -172,6 +173,7 @@ module.exports = {
   },
   check_limit_order_list: async (symbol) => {
     const idx = coin_info.findIndex((e) => e.symbol == symbol);
+    if (idx == -1) return;
 
     const res = await getAxios("/private/linear/order/search", {
       symbol,
@@ -192,6 +194,7 @@ module.exports = {
   },
   check_position_change: async (symbol) => {
     const coinObject = coin_info.find((coin) => coin.symbol == symbol);
+    if (!coinObject) return;
 
     // 없는 포지션 숫자를 찾아서 배열에 담음.
     const absent_position_list = [];
@@ -257,8 +260,8 @@ module.exports = {
       on_position_coin_list.find(
         (e) => e.symbol == symbol && e.side == "Sell"
       ) == null &&
-      absent_position_list.includes(1) &&
-      !absent_position_list.includes(2)
+      !absent_position_list.includes(1) &&
+      absent_position_list.includes(2)
     ) {
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [1]);
     }
@@ -268,8 +271,8 @@ module.exports = {
       on_position_coin_list.find(
         (e) => e.symbol == symbol && e.side == "Buy"
       ) == null &&
-      absent_position_list.includes(3) &&
-      !absent_position_list.includes(4)
+      !absent_position_list.includes(3) &&
+      absent_position_list.includes(4)
     ) {
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [4]);
     }
@@ -279,6 +282,7 @@ module.exports = {
     for (const position of on_position_coin_list) {
       if (position.symbol == symbol) {
         const coinObj = coin_info.find((e) => e.symbol == symbol);
+        if (!coinObj) return;
         const current_price = coinObj.current_price;
 
         console.log(
@@ -340,5 +344,35 @@ module.exports = {
     await postAxios("/private/linear/position/switch-isolated", params);
 
     console.log("고립으로 mode 변경 ");
+  },
+  check_available_coin_trade: () => {
+    const available_balance = trade.total_money * trade.using_money_rate;
+    const delete_idx_list = [];
+    let idx = 0;
+    let total_coin_num = coin_info.length;
+    for (const coin of coin_info) {
+      const one_coin_available_balnce =
+        available_balance / (total_coin_num * 4);
+      const qty = one_coin_available_balnce / coin.current_price;
+      if (qty < coin.min_trading_qty) {
+        console.log("qty", qty, "coin.min_trading_qty", coin.min_trading_qty);
+        console.log("######################################################");
+        console.log(
+          "## 보유한 금액으로",
+          coin.symbol,
+          "를 거래할 수 없습니다."
+        );
+        console.log("######################################################");
+        total_coin_num--;
+        delete_idx_list.push(idx);
+      }
+      idx++;
+    }
+
+    delete_idx_list.sort((a, b) => b - a);
+
+    for (const idx of delete_idx_list) {
+      coin_info.splice(idx, 1);
+    }
   },
 };

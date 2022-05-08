@@ -4,7 +4,6 @@ const {
   coin_info,
   on_position_coin_list,
 } = require("../globalState/index");
-const { get_current_price } = require("../trade/order");
 const { getTargetPrice } = require("../utils/index");
 const TRADE = require("../TRADE.json");
 const COINS = require("../COINS.json");
@@ -12,12 +11,13 @@ const COINS = require("../COINS.json");
 module.exports = {
   order_long_position: async (symbol, price, order_link_id) => {
     // 얼마나 살건지 가격 측정하는 부분.
-    const order_money =
+    const available_balance =
       (trade.total_money * trade.using_money_rate) / (4 * coin_info.length);
 
     const coinObject = coin_info.find((e) => e.symbol == symbol);
+    if (!coinObject) return;
 
-    let qty = order_money / price;
+    let qty = available_balance / price;
 
     const namo = qty % coinObject.qty_step;
 
@@ -66,12 +66,13 @@ module.exports = {
   },
   order_short_position: async (symbol, price, order_link_id) => {
     // 얼마나 살건지 가격 측정하는 부분.
-    const order_money =
+    const available_balance =
       (trade.total_money * trade.using_money_rate) / (4 * coin_info.length);
 
     const coinObject = coin_info.find((e) => e.symbol == symbol);
+    if (!coinObject) return;
 
-    let qty = order_money / price;
+    let qty = available_balance / price;
 
     const namo = qty % coinObject.qty_step;
 
@@ -117,11 +118,10 @@ module.exports = {
     const res = await postAxios("/private/linear/order/create", params);
     return res;
   },
-  // const res4 = await replace_order(symbol,price, idx, 4);
   replace_order: async (symbol, price, idx, position) => {
     const coinObject = coin_info[idx];
 
-    const order_money =
+    const available_balance =
       (trade.total_money * trade.using_money_rate * COINS.white_list.length) /
       (4 * coin_info.length);
 
@@ -135,7 +135,7 @@ module.exports = {
       side = "long";
     }
 
-    let qty = order_money / price;
+    let qty = available_balance / price;
 
     const remain = qty % coinObject.qty_step;
 
@@ -191,7 +191,8 @@ module.exports = {
     const res = await postAxios("/private/linear/order/replace", params);
 
     if ((res.ret_msg = "OK")) {
-      console.log(symbol, "## 가격 업데이트 ###### ");
+      console.log(symbol, "## 가격 업데이트 ###### position =>", position);
+      console.log("현재가 => ", price, "주문가 => ", order_price);
       console.log("## rate_limit", res.rate_limit_status, "###############");
       console.log("## rate_limit", res, "###############");
       return true;
@@ -303,21 +304,28 @@ module.exports = {
       interval: 1,
       from: Math.ceil(Date.now() / 1000 - 100),
     });
+    if (kline_res.ret_code == "10001")
+      console.log("COINS에 코인 이름을 다시한번 확인해주세요.");
     const current_price = parseFloat(kline_res.result[0].close);
 
     return current_price;
   },
   // limit_rate가 걸렸을경우 전부 대기시키고 1순위로 주문을 넣어줘야댐.
   create_limit_order: async (symbol, tick_size, order_position_list) => {
-    const idx = coin_info.findIndex((e) => e.symbol == symbol);
-
     const thisModule = require("./order");
+
+    const idx = coin_info.findIndex((e) => e.symbol == symbol);
+    if (idx == -1) return;
     const current_price = await thisModule.get_current_price(symbol);
 
     const order_price_list = [];
 
     for (const position of order_position_list) {
-      order_price_list.push(getTargetPrice(symbol, current_price, position));
+      const target_price = getTargetPrice(symbol, current_price, position);
+      order_price_list.push({
+        position: position,
+        price: target_price,
+      });
     }
 
     for (const position_order of order_position_list) {
@@ -333,74 +341,86 @@ module.exports = {
       order_position_list.includes(1) &&
       !coin_info[idx].order.find((e) => e.position == 1)
     ) {
+      order_price = order_price_list.find((e) => e.position == 1);
       const short_res2 = await thisModule.order_short_position(
         symbol,
-        order_price_list[0],
+        order_price.price,
         `create-short-limit-1-${Date.now()}`
       );
 
       console.log(symbol, "short_res2", short_res2);
 
-      if (short_res2.ret_msg == "OK") {
+      if (short_res2 && short_res2.ret_msg == "OK") {
         coin_info[idx].order.push({
           id: short_res2.result.order_id,
           position: 1,
         });
+      } else {
+        console.log("short_res2 err !!!!!");
       }
     }
     if (
       order_position_list.includes(2) &&
       !coin_info[idx].order.find((e) => e.position == 2)
     ) {
+      order_price = order_price_list.find((e) => e.position == 2);
       const short_res1 = await thisModule.order_short_position(
         symbol,
-        order_price_list[1],
+        order_price.price,
         `create-short-limit-2-${Date.now()}`
       );
       console.log(symbol, "short_res1", short_res1);
 
-      if (short_res1.ret_msg == "OK") {
+      if (short_res1 && short_res1.ret_msg == "OK") {
         coin_info[idx].order.push({
           id: short_res1.result.order_id,
           position: 2,
         });
+      } else {
+        console.log("short_res1 err!!!");
       }
     }
     if (
       order_position_list.includes(3) &&
       !coin_info[idx].order.find((e) => e.position == 3)
     ) {
+      order_price = order_price_list.find((e) => e.position == 3);
       const long_res1 = await thisModule.order_long_position(
         symbol,
-        order_price_list[2],
+        order_price.price,
         `create-long-limit-3-${Date.now()}`
       );
 
       console.log(symbol, "long_res1", long_res1);
-      if (long_res1.ret_msg == "OK") {
+      if (long_res1 && long_res1.ret_msg == "OK") {
         coin_info[idx].order.push({
           id: long_res1.result.order_id,
           position: 3,
         });
+      } else {
+        console.log("long_res1 err");
       }
     }
     if (
       order_position_list.includes(4) &&
       !coin_info[idx].order.find((e) => e.position == 4)
     ) {
+      order_price = order_price_list.find((e) => e.position == 4);
       const long_res2 = await thisModule.order_long_position(
         symbol,
-        order_price_list[3],
+        order_price.price,
         `create-long-limit-4-${Date.now()}`
       );
 
       console.log(symbol, "long_res2", long_res2);
 
-      if (long_res2.ret_msg == "OK") {
+      if (long_res2 && long_res2.ret_msg == "OK") {
         coin_info[idx].order.push({
           id: long_res2.result.order_id,
           position: 4,
         });
+      } else {
+        console.log("long_res2 err");
       }
     }
   },

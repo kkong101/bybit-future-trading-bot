@@ -2,6 +2,8 @@ const puppeteer = require("puppeteer");
 const TRADE = require("../TRADE.json");
 const { trade } = require("../globalState/index");
 const { postAxios } = require("../axios/index");
+const { check_available_coin_trade } = require("../setInfo/index");
+const { setBalance } = require("../trade/deposit");
 
 module.exports = {
   setVix: async () => {
@@ -38,6 +40,12 @@ module.exports = {
                 sell_leverage: e.leverage,
               }
             );
+
+            // 잔고 업데이트 부분.
+            await setBalance();
+
+            // 최소수량 못마추는 코인들 제거하기.
+            check_available_coin_trade();
           }
         });
       });

@@ -26,9 +26,6 @@ module.exports = {
 
       // 포지션 정리할거 있는지 체크
       await check_position_order(symbol);
-
-      // 잔고 업데이트 => 이거 더 최적화 하는 방법 없는지 찾아봐야댐.
-      await setBalance();
     }
   },
 };

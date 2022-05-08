@@ -25,6 +25,7 @@ const {
   getCoinInfo,
   check_on_position_list,
   set_isolated_mode,
+  check_available_coin_trade,
 } = require("./setInfo/index");
 
 const API_KEY = SECRET.bybit.API_KEY;
@@ -56,18 +57,29 @@ const main = async () => {
 
   const ws = new WebsocketClient(wsConfig);
 
+  let isReady = false;
+  const request_interval = 500;
+
   /**
    * 최초 주문 넣어주는 부분
    */
   setTimeout(async () => {
+    let idx = 1;
     for (const coin of COINS.white_list) {
-      const coinObject = coin_info.find((ee) => ee.symbol == coin.symbol);
+      setTimeout(async () => {
+        const coinObject = coin_info.find((ee) => ee.symbol == coin.symbol);
+        if (!coinObject) return;
 
-      const tick_size = parseFloat(coinObject.tick_size);
-      await create_limit_order(coin.symbol, tick_size, [1, 2, 3, 4]);
-      coinObject.update_time = Date.now();
+        const tick_size = parseFloat(coinObject.tick_size);
+        await create_limit_order(coin.symbol, tick_size, [1, 2, 3, 4]);
+        coinObject.update_time = Date.now();
+      }, idx * request_interval);
+      idx++;
     }
-  }, 1500);
+    setTimeout(() => {
+      isReady = true;
+    }, COINS.white_list.length * request_interval + 4000);
+  }, 5000);
 
   /**
    * END ###
@@ -108,6 +120,7 @@ const main = async () => {
      *  1초마다 queue에 있는 작업들을 체크한뒤 하나씩 실행.
      */
     setInterval(async () => {
+      if (!isReady) return;
       console.log("trade.is_onCreate_order", trade.is_onCreate_order);
       console.log("trade.is_circuit_breaker", trade.is_circuit_breaker);
       console.log("on_position_coin_list", on_position_coin_list);
@@ -126,12 +139,13 @@ const main = async () => {
         console.log(e.symbol, " =>  updated_time : ", Date.now() - e.updated);
       });
 
-      // for (const coin of last_updated_time) {
-      //   if (Date.now() - coin.updated > 7000) {
-      //     await check_send_order(coin.symbol);
-      //     coin.updated = Date.now();
-      //   }
-      // }
+      for (const coin of last_updated_time) {
+        if (Date.now() - coin.updated > 11000) {
+          console.log("check_send_order##### 작동");
+          await check_send_order(coin.symbol);
+          coin.updated = Date.now();
+        }
+      }
 
       if (queue.length == 0) return;
 
@@ -143,7 +157,7 @@ const main = async () => {
         if (queue.length == 0) return;
       }
     }, 1000);
-  }, 11000);
+  }, COINS.white_list.length * request_interval + 4000);
   /**
    * THE END #######
    */
@@ -152,11 +166,12 @@ const main = async () => {
    * 실시간 코인 가격 불러오는 부분 #####
    */
   setTimeout(() => {
-    ws.close("trade.*");
+    // ws.close("trade.*");
     coin_info.forEach((e) => {
       ws.subscribe(`trade.${e.symbol}`);
     });
     ws.on("update", async (data) => {
+      if (!isReady) return;
       if (trade.is_circuit_breaker) return;
 
       const direction_list = [];
@@ -189,8 +204,10 @@ const main = async () => {
         ) {
           // 같은 가격이면 요청 보내지 않음.tick_size
           if (
-            coin_info[idx].previous_price + coin_info[idx].tick_size >= price &&
-            coin_info[idx].previous_price - coin_info[idx].tick_size <= price
+            coin_info[idx].previous_price + coin_info[idx].tick_size * 2 >=
+              price &&
+            coin_info[idx].previous_price - coin_info[idx].tick_size * 2 <=
+              price
           ) {
             console.log("이전가격과 동일하여 replace order 부분 return");
             return;
@@ -205,7 +222,8 @@ const main = async () => {
 
           const res4 = await replace_order(symbol, price, idx, 4);
 
-          if (res1 && res2 && res3 && res4) {
+          if (res1 || res2 || res3 || res4) {
+            console.log("res1-4 중에 하나 변경 성공 !!");
             coin_info[idx].previous_price = price;
             coin_info[idx].update_time = Date.now();
           }
@@ -213,7 +231,7 @@ const main = async () => {
         }
       }
     });
-  }, 13000);
+  }, COINS.white_list.length * request_interval + 8000);
   /**
    * THE END ###
    */

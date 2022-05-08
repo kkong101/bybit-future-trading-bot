@@ -25,6 +25,7 @@ module.exports = {
   },
   getTargetPrice: (symbol, current_price, position) => {
     const coinObj = coin_info.find((e) => e.symbol == symbol);
+    if (!coinObj) return;
     const white_list = COINS.white_list.find((e) => e.symbol == symbol);
     const tick_size = coinObj.tick_size;
 
