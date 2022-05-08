@@ -195,6 +195,8 @@ module.exports = {
       console.log("현재가 => ", price, "주문가 => ", order_price);
       console.log("## rate_limit", res.rate_limit_status, "###############");
       console.log("## rate_limit", res, "###############");
+      coin_info[idx].previous_price = price;
+      coin_info[idx].update_time = Date.now();
       return true;
     } else {
       console.log("##### REPLACE_ORDER 실패 #####");
@@ -355,6 +357,7 @@ module.exports = {
           id: short_res2.result.order_id,
           position: 1,
         });
+        coin_info[idx].previous_price = order_price.price;
       } else {
         console.log("short_res2 err !!!!!");
       }
@@ -376,6 +379,7 @@ module.exports = {
           id: short_res1.result.order_id,
           position: 2,
         });
+        coin_info[idx].previous_price = order_price.price;
       } else {
         console.log("short_res1 err!!!");
       }
@@ -397,6 +401,7 @@ module.exports = {
           id: long_res1.result.order_id,
           position: 3,
         });
+        coin_info[idx].previous_price = order_price.price;
       } else {
         console.log("long_res1 err");
       }
@@ -419,6 +424,7 @@ module.exports = {
           id: long_res2.result.order_id,
           position: 4,
         });
+        coin_info[idx].previous_price = order_price.price;
       } else {
         console.log("long_res2 err");
       }

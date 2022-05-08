@@ -121,39 +121,17 @@ const test123 = async (symbol = "BTCUSDT") => {
 };
 
 const qwedq = async () => {
-  if (coin_info.findIndex((e) => e.symbol == symbol) == 1) {
+  const set = new Map();
+
+  set.set("BTC", 31233);
+  set.set("BTC", 31240);
+  set.set("BTC", 31260);
+
+  for (const [key, value] of set) {
+    console.log(key + " , " + value);
   }
+
+  console.log(set.size);
 };
 
-const qwdefw = async () => {
-  await setBalance();
-  await getCoinInfo();
-
-  // let available_balance = trade.total_money * trade.using_money_rate;
-  let available_balance = 1000;
-  const delete_idx_list = [];
-  let idx = 0;
-  let total_coin_num = coin_info.length;
-  for (const coin of coin_info) {
-    const one_coin_available_balnce = available_balance / (total_coin_num * 4);
-    const qty = one_coin_available_balnce / coin.current_price;
-    if (qty < coin.min_trading_qty) {
-      console.log("######################################################");
-      console.log("## 보유한 금액으로", coin.symbol, "를 거래할 수 없습니다.");
-      console.log("######################################################");
-      total_coin_num--;
-      delete_idx_list.push(idx);
-    }
-    idx++;
-  }
-
-  delete_idx_list.sort((a, b) => b - a);
-
-  for (const idx of delete_idx_list) {
-    coin_info.splice(idx, 1);
-  }
-
-  console.log(coin_info);
-};
-
-qwdefw();
+qwedq();
