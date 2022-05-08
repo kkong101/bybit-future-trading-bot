@@ -132,6 +132,9 @@ module.exports = {
                 our_list.qty = position.size;
                 // 가격 갱신
                 our_list.price = position.entry_price;
+
+                // 청산가 갱신
+                our_list.liq_price = parseFloat(position.liq_price);
               }
             }
           }
@@ -144,6 +147,7 @@ module.exports = {
               price: position.entry_price,
               qty: position.size,
               time: Date.now(),
+              liq_price: parseFloat(position.liq_price),
             });
           }
         }
@@ -274,15 +278,38 @@ module.exports = {
   check_position_order: async (symbol) => {
     for (const position of on_position_coin_list) {
       if (position.symbol == symbol) {
-        const current_price = await get_current_price(symbol);
+        const coinObj = coin_info.find((e) => e.symbol == symbol);
+        const current_price = coinObj.current_price;
 
-        console.log("포지션 정리까지 남은 시간 ", Date.now() - position.time);
+        console.log(
+          "## 포지션 정리까지 남은 시간 ",
+          Date.now() - position.time
+        );
 
-        // 해당하는 포지션 작업이 왔다면, 설정파일에 있는 시간를 체크함
+        /**
+         * 청산가격 방어 check 하는 부분
+         */
+
+        if (position.side == "Sell") {
+          if (coinObj.liq_price < current_price * 1.04) {
+            console.log("청산 방지를 위해 포지션을 모두 정리합니다. ######");
+            await close_one_position(symbol, position.side);
+          }
+        } else {
+          if (coinObj.liq_price * 1.04 > current_price) {
+            console.log("청산 방지를 위해 포지션을 모두 정리합니다. ######");
+            await close_one_position(symbol, position.side);
+          }
+        }
+
+        /**
+         * THE END #################################
+         */
         if (
           Date.now() - position.time >
           TRADE.close_position.close_position_time * 1000
         ) {
+          // 해당하는 포지션 작업이 왔다면, 설정파일에 있는 시간를 체크함
           // 설정파일에서 설정한 시간이 지났다면 포지션 정리
           await close_one_position(symbol, position.side);
         } else if (

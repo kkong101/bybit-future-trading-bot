@@ -126,12 +126,11 @@ const qwedq = async () => {
 };
 
 const qwdefw = async () => {
-  const test = 9.248526;
-  const tick_size = 0.11;
+  const res = await getAxios("/private/linear/position/list", {
+    symbol: "OGNUSDT",
+  });
 
-  const result = test - (test % tick_size);
-
-  console.log(result);
+  console.log(res);
 };
 
 qwdefw();

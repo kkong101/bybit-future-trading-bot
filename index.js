@@ -179,6 +179,9 @@ const main = async () => {
       const symbol = obj.symbol;
       const idx = coin_info.findIndex((e) => e.symbol == symbol);
 
+      // 코인 가격 업데이트 해줌.
+      coin_info[idx].current_price = price;
+
       if (idx != -1) {
         if (
           Date.now() - coin_info[idx].update_time >

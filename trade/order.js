@@ -163,6 +163,7 @@ module.exports = {
 
     let stop_loss = 0;
     let take_profit = 0;
+
     // Target Profit, Stop Loss(익절, 손절) 구하는 부분
     if (side == "short") {
       stop_loss = price + price * TRADE.close_position.loss.loss_percentage;

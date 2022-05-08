@@ -18,6 +18,7 @@ module.exports = {
       order_id: [cd9a24c, cd9a24c, cd9a24c]
       update_time: 153049039404
       previous_price: 0,
+      current_price: 0,
     }
    */
 
