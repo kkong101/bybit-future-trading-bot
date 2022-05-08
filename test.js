@@ -71,30 +71,56 @@ const wsConfigUpdate = {
 
 // test();
 
-// const test2 = async () => {
-//   const ws = new WebsocketClient(wsConfig);
+const test2 = async () => {
+  const ws = new WebsocketClient(wsConfig);
 
-//   ws.close("trade.*");
+  ws.close("trade.*");
 
-//   ws.subscribe(`trade.BTCUSDT`);
+  ws.subscribe(`trade.ETHUSDT`);
 
-//   ws.on("update", async (data) => {
-//     console.log(data);
-//   });
-// };
+  ws.on("update", async (data) => {
+    console.log(data);
+    const direction_list = [];
+    // ZeroMinusTick & ZeroPlusTick 제거
+    for (const res of data.data) {
+      if (
+        res.tick_direction != "ZeroMinusTick" &&
+        res.tick_direction != "ZeroPlusTick"
+      ) {
+        direction_list.push(res);
+      }
+    }
 
-const test123 = async () => {
-  const res = await getAxios("/private/linear/order/search", {
-    symbol: "BTCUSDT",
+    if (direction_list.length > 0) {
+      const obj = direction_list[direction_list.length - 1];
+      console.log(" ### PRICE == > ", obj.price);
+    }
   });
+};
+
+const test123 = async (symbol = "BTCUSDT") => {
+  const res = await getAxios("/private/linear/position/list", {
+    symbol: symbol,
+  });
+
   console.log(res);
+  if (res.result || res.result.length != 0) {
+    for (const position of res.result) {
+      // 만약 구매한 상태라면,
+      if (parseFloat(position.size) != 0) {
+        console.log(position.side);
+      }
+
+      if (parseFloat(position.size) > 0) {
+        console.log("성공");
+      }
+    }
+  }
 };
 
 const qwedq = async () => {
-  const res = await getAxios("/private/linear/position/list", {
-    symbol: "BTCUSDT",
-  });
-  console.log(res);
+  if (coin_info.findIndex((e) => e.symbol == symbol) == 1) {
+  }
 };
 
 const qwdefw = async () => {
@@ -106,4 +132,4 @@ const qwdefw = async () => {
   }
 };
 
-qwdefw();
+test123();

@@ -106,13 +106,13 @@ module.exports = {
     }
   },
   check_on_position_list: async (symbol) => {
-    // 시작
+    console.log("check_on_position_list 시작");
     const res = await getAxios("/private/linear/position/list", {
       symbol: symbol,
     });
 
     for (const tt of on_position_coin_list) {
-      console.log("판매까지 남은 시간 => ", Date.now() - tt.time);
+      console.log(symbol, "구매한지 얼마나 지남? => ", Date.now() - tt.time);
     }
 
     if (res.result || res.result.length != 0) {
@@ -135,6 +135,7 @@ module.exports = {
               }
             }
           }
+
           if (!isDuplicated) {
             console.log("on_position_coin_list에 들어감 !!");
             on_position_coin_list.push({

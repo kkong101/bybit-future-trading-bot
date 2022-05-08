@@ -20,7 +20,7 @@ const {
   get_current_price,
 } = require("./trade/order");
 
-const { check_order, check_send_order } = require("./subscribe/update");
+const { check_send_order } = require("./subscribe/update");
 const {
   getCoinInfo,
   check_on_position_list,
@@ -82,31 +82,31 @@ const main = async () => {
     });
   }
 
+  /**
+   * 매수 매도 (체결 정보) 실시간으로 받는곳
+   */
   setTimeout(() => {
-    /**
-     * 체결 정보 실시간으로 받는곳
-     */
     wsUpdate.on("update", async (data) => {
-      console.log("##############");
+      console.log("체결됨##############");
       console.log(data);
-      console.log("##############");
+      console.log("체결됨##############");
       for (const res of data.data) {
         for (const q of queue) {
-          if (q.symbol == res.symbol && q.side == res.side) {
-            break;
-          } else {
-            queue.push({
-              symbol: res.symbol,
-              side: res.side,
-            });
-          }
+          if (q.symbol == res.symbol && q.side == res.side) return;
         }
+        queue.push({
+          symbol: res.symbol,
+          side: res.side,
+        });
       }
     });
     /**
      * END #####
      */
 
+    /**
+     *  1초마다 queue에 있는 작업들을 체크한뒤 하나씩 실행.
+     */
     setInterval(async () => {
       console.log("trade.is_onCreate_order", trade.is_onCreate_order);
       console.log("trade.is_circuit_breaker", trade.is_circuit_breaker);
@@ -126,12 +126,12 @@ const main = async () => {
         console.log(e.symbol, " =>  updated_time : ", Date.now() - e.updated);
       });
 
-      for (const coin of last_updated_time) {
-        if (Date.now() - coin.updated > 7000) {
-          await check_send_order(coin.symbol);
-          coin.updated = Date.now();
-        }
-      }
+      // for (const coin of last_updated_time) {
+      //   if (Date.now() - coin.updated > 7000) {
+      //     await check_send_order(coin.symbol);
+      //     coin.updated = Date.now();
+      //   }
+      // }
 
       if (queue.length == 0) return;
 
@@ -143,103 +143,74 @@ const main = async () => {
         if (queue.length == 0) return;
       }
     }, 1000);
-  }, 5500);
+  }, 11000);
+  /**
+   * THE END #######
+   */
 
   /**
-   * Websocket으로 불러오는 부분 => API로 불러오게 변경
+   * 실시간 코인 가격 불러오는 부분 #####
    */
   setTimeout(() => {
-    setInterval(async () => {
-      for (const coin of COINS.white_list) {
-        const price = await get_current_price(coin.symbol);
-        const idx = coin_info.findIndex((e) => e.symbol == coin.symbol);
+    ws.close("trade.*");
+    coin_info.forEach((e) => {
+      ws.subscribe(`trade.${e.symbol}`);
+    });
+    ws.on("update", async (data) => {
+      if (trade.is_circuit_breaker) return;
 
+      const direction_list = [];
+      // ZeroMinusTick & ZeroPlusTick 제거
+      for (const res of data.data) {
         if (
-          coin_info[idx].previous_price + coin_info[idx].tick_size >= price &&
-          coin_info[idx].previous_price - coin_info[idx].tick_size <= price
+          res.tick_direction != "ZeroMinusTick" &&
+          res.tick_direction != "ZeroPlusTick"
         ) {
-          console.log(
-            "이전가격과 동일하여 replace order 부분 return ################"
-          );
-          return;
+          direction_list.push(res);
         }
-        console.log(coin.symbol, " 시작 #####");
-
-        const res1 = await replace_order(coin.symbol, price, idx, 1);
-
-        const res2 = await replace_order(coin.symbol, price, idx, 2);
-
-        const res3 = await replace_order(coin.symbol, price, idx, 3);
-
-        const res4 = await replace_order(coin.symbol, price, idx, 4);
-
-        if (res1 && res2 && res3 && res4) {
-          coin_info[idx].previous_price = price;
-          coin_info[idx].update_time = Date.now();
-        }
-        console.log(coin.symbol, " 끝 #####");
       }
-    }, TRADE.order_interval * 1000);
-  }, 6000);
 
-  /**
-   * THE END ###
-   */
+      // 가격 변동이 없으면 return 시킴.
+      if (direction_list.length == 0) return;
+      const obj = direction_list[direction_list.length - 1];
+      console.log(" ### PRICE == > ", obj.price);
 
-  /**
-   * 이전 버전
-   */
-  // setTimeout(() => {
-  //   ws.close("trade.*");
-  //   coin_info.forEach((e) => {
-  //     ws.subscribe(`trade.${e.symbol}`);
-  //   });
+      const price = parseFloat(obj.price);
+      const symbol = obj.symbol;
+      const idx = coin_info.findIndex((e) => e.symbol == symbol);
 
-  //   ws.on("update", async (data) => {
-  //     // 50틱 이상 가격에 걸어줌.
-  //     const symbol = data.data[0].symbol;
-  //     const price = parseFloat(data.data[0].price);
+      if (idx != -1) {
+        if (
+          Date.now() - coin_info[idx].update_time >
+          TRADE.order_interval * 1000
+        ) {
+          // 같은 가격이면 요청 보내지 않음.tick_size
+          if (
+            coin_info[idx].previous_price + coin_info[idx].tick_size >= price &&
+            coin_info[idx].previous_price - coin_info[idx].tick_size <= price
+          ) {
+            console.log("이전가격과 동일하여 replace order 부분 return");
+            return;
+          }
+          // idx는 coin_info에서 해당하는 coin이 몇번째에 있는지의 대한 값임.
+          // 1은 limit order가 위에서부터 몇번째인지 >?
+          const res1 = await replace_order(symbol, price, idx, 1);
 
-  //     console.log("!@#", symbol, " => ", price);
+          const res2 = await replace_order(symbol, price, idx, 2);
 
-  //     if (coin_info.find((e) => symbol == e.symbol)) {
-  //       let idx = coin_info.findIndex((e) => e.symbol == symbol);
+          const res3 = await replace_order(symbol, price, idx, 3);
 
-  //       console.log("이거 뭐나옴 ? ", Date.now() - coin_info[idx].update_time);
-  //       if (
-  //         Date.now() - coin_info[idx].update_time >
-  //         TRADE.order_interval * 1000
-  //       ) {
-  //         // 같은 가격이면 요청 보내지 않음.tick_size
-  //         if (
-  //           coin_info[idx].previous_price + coin_info[idx].tick_size >= price &&
-  //           coin_info[idx].previous_price - coin_info[idx].tick_size <= price
-  //         ) {
-  //           console.log("이전가격과 동일하여 replace order 부분 return");
-  //           return;
-  //         }
-  //         /**
-  //          * high_position_price + tick_size * TRADE.call_put_tick_size,
-  //          */
-  //         console.log("가격 업데이트");
+          const res4 = await replace_order(symbol, price, idx, 4);
 
-  //         // idx는 coin_info에서 해당하는 coin이 몇번째에 있는지의 대한 값임.
-  //         // 1은 limit order가 위에서부터 몇번째인지 >?
-  //         const res1 = await replace_order(symbol, price, idx, 1);
-
-  //         const res2 = await replace_order(symbol, price, idx, 2);
-
-  //         const res3 = await replace_order(symbol, price, idx, 3);
-
-  //         const res4 = await replace_order(symbol, price, idx, 4);
-
-  //         console.log("REPLACE ORDER", res4);
-
-  //         coin_info[idx].update_time = Date.now();
-  //       }
-  //     }
-  //   });
-  // }, 4000);
+          if (res1 && res2 && res3 && res4) {
+            coin_info[idx].previous_price = price;
+            coin_info[idx].update_time = Date.now();
+          }
+          console.log(symbol, " 끝 #####");
+        }
+      }
+    });
+  }, 13000);
   /**
    * THE END ###
    */
