@@ -16,6 +16,8 @@ const {
   get_current_price,
 } = require("./trade/order");
 
+const COINS = require("./COINS.json");
+
 const {
   set_circuit_breaker_condition,
   check_circuit_breaker,
@@ -124,12 +126,12 @@ const qwedq = async () => {
 };
 
 const qwdefw = async () => {
-  let qty = 0.6000000000000001;
-  const splited = qty.toString().split(".");
-  if (splited.length == 2 && splited[1].length > 6) {
-    const test = qty - qty.toFixed(4);
-    console.log(qty - test);
-  }
+  const test = 9.248526;
+  const tick_size = 0.11;
+
+  const result = test - (test % tick_size);
+
+  console.log(result);
 };
 
-test123();
+qwdefw();

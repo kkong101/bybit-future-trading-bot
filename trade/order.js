@@ -5,7 +5,9 @@ const {
   on_position_coin_list,
 } = require("../globalState/index");
 const { get_current_price } = require("../trade/order");
+const { getTargetPrice } = require("../utils/index");
 const TRADE = require("../TRADE.json");
+const COINS = require("../COINS.json");
 
 module.exports = {
   order_long_position: async (symbol, price, order_link_id) => {
@@ -119,26 +121,17 @@ module.exports = {
   replace_order: async (symbol, price, idx, position) => {
     const coinObject = coin_info[idx];
 
-    // 얼마어치 살껀지 책정하는 부분
     const order_money =
-      (trade.total_money * trade.using_money_rate) /
-      (TRADE.additional_position + TRADE.additional_position);
+      (trade.total_money * trade.using_money_rate * COINS.white_list.length) /
+      (4 * coin_info.length);
 
-    let order_price = price;
-    // position => [1, 2, 3, 4] 체크해서. 해당되는 limit order price를 넣어줘야댐.
-    const tick_size = parseFloat(coinObject.tick_size);
-    const current_price = price;
+    // 얼마어치 살껀지 책정하는 부분
+    const order_price = getTargetPrice(symbol, price, position);
 
     let side = "short";
-    if (position == 1) {
-      order_price = current_price + tick_size * TRADE.call_put_tick_size * 2;
-    } else if (position == 2) {
-      order_price = current_price + tick_size * TRADE.call_put_tick_size;
-    } else if (position == 3) {
-      order_price = current_price - tick_size * TRADE.call_put_tick_size;
+    if (position == 3) {
       side = "long";
     } else if (position == 4) {
-      order_price = current_price - tick_size * TRADE.call_put_tick_size * 2;
       side = "long";
     }
 
@@ -320,21 +313,11 @@ module.exports = {
     const thisModule = require("./order");
     const current_price = await thisModule.get_current_price(symbol);
 
-    let high_position_price =
-      current_price + tick_size * TRADE.call_put_tick_size;
-    let low_position_price =
-      current_price - tick_size * TRADE.call_put_tick_size;
+    const order_price_list = [];
 
-    let precision_num = 0;
-    const stringed_number = tick_size.toString();
-    if (stringed_number.split(".")[0].length != stringed_number.length) {
-      precision_num = stringed_number.split(".")[1].length;
+    for (const position of order_position_list) {
+      order_price_list.push(getTargetPrice(symbol, current_price, position));
     }
-
-    high_position_price = parseFloat(
-      high_position_price.toFixed(precision_num)
-    );
-    low_position_price = parseFloat(low_position_price.toFixed(precision_num));
 
     for (const position_order of order_position_list) {
       // 이미 해당 포지션에 거래가 존재한다면 return 시킴.
@@ -351,11 +334,7 @@ module.exports = {
     ) {
       const short_res2 = await thisModule.order_short_position(
         symbol,
-        parseFloat(
-          (high_position_price + tick_size * TRADE.call_put_tick_size).toFixed(
-            precision_num
-          )
-        ),
+        order_price_list[0],
         `create-short-limit-1-${Date.now()}`
       );
 
@@ -374,7 +353,7 @@ module.exports = {
     ) {
       const short_res1 = await thisModule.order_short_position(
         symbol,
-        high_position_price,
+        order_price_list[1],
         `create-short-limit-2-${Date.now()}`
       );
       console.log(symbol, "short_res1", short_res1);
@@ -392,7 +371,7 @@ module.exports = {
     ) {
       const long_res1 = await thisModule.order_long_position(
         symbol,
-        low_position_price,
+        order_price_list[2],
         `create-long-limit-3-${Date.now()}`
       );
 
@@ -410,11 +389,7 @@ module.exports = {
     ) {
       const long_res2 = await thisModule.order_long_position(
         symbol,
-        parseFloat(
-          (low_position_price - tick_size * TRADE.call_put_tick_size).toFixed(
-            precision_num
-          )
-        ),
+        order_price_list[3],
         `create-long-limit-4-${Date.now()}`
       );
 
