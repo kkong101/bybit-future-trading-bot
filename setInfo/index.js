@@ -112,10 +112,6 @@ module.exports = {
       symbol: symbol,
     });
 
-    for (const tt of on_position_coin_list) {
-      console.log(tt.symbol, "구매한지 얼마나 지남? => ", Date.now() - tt.time);
-    }
-
     if (res.result || res.result.length != 0) {
       for (const position of res.result) {
         // 만약 구매한 상태라면,
@@ -283,7 +279,7 @@ module.exports = {
       if (position.symbol == symbol) {
         const coinObj = coin_info.find((e) => e.symbol == symbol);
         if (!coinObj) return;
-        const current_price = coinObj.current_price;
+        const current_price = parseFloat(coinObj.current_price);
 
         console.log(
           "## 포지션 정리까지 남은 시간 ",
@@ -315,6 +311,10 @@ module.exports = {
         ) {
           // 해당하는 포지션 작업이 왔다면, 설정파일에 있는 시간를 체크함
           // 설정파일에서 설정한 시간이 지났다면 포지션 정리
+          console.log(
+            symbol,
+            "### 시간이 지나서 코인 포지션을 정리하였습니다."
+          );
           await close_one_position(symbol, position.side);
         } else if (
           (position.side == "Sell" &&
@@ -328,6 +328,7 @@ module.exports = {
                 position.price * TRADE.close_position.profit.profit_percentage)
         ) {
           // 만약 롱과 숏이 설정해놓은 퍼샌테이지 이상의 익절 상태라면,
+          console.log(symbol, "#### 익절 로직에 의해 코인이 익절되었습니다.");
           await close_one_position(symbol, position.side);
         }
       }

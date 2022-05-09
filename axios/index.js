@@ -4,7 +4,7 @@ const { getSignature } = require("../utils/index");
 
 module.exports = {
   getAxios: async (api_url, param) => {
-    console.log("########## getAxios 호출 ##########");
+    console.log("########## getAxios 호출 ##########", param?.symbol);
     console.log("api_url", api_url);
     console.log("####################################");
     const base_url = SECRET.mode == "test" ? SECRET.url.test : SECRET.url.live;
@@ -37,7 +37,7 @@ module.exports = {
     return res.data;
   },
   postAxios: async (api_url, param) => {
-    console.log("########## postAxios 호출 ##########");
+    console.log("########## postAxios 호출 ##########", param?.symbol);
     console.log("api_url", api_url);
     console.log("####################################");
     const base_url = SECRET.mode == "test" ? SECRET.url.test : SECRET.url.live;

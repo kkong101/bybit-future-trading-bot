@@ -23,12 +23,12 @@
   ],
   "close_position": {
     "profit": {
-      "profit_percentage": 0.01
+      "profit_percentage": 2
     },
     "loss": {
-      "loss_percentage": 0.02
+      "loss_percentage": 2
     },
-    "close_position_time": 60
+    "close_position_time": 120
   },
   "order_interval": 3,
   "call_put_tick_size": 30,

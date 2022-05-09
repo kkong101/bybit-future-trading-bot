@@ -122,8 +122,7 @@ module.exports = {
     const coinObject = coin_info[idx];
 
     const available_balance =
-      (trade.total_money * trade.using_money_rate * COINS.white_list.length) /
-      (4 * coin_info.length);
+      (trade.total_money * trade.using_money_rate) / (4 * coin_info.length);
 
     // 얼마어치 살껀지 책정하는 부분
     const order_price = getTargetPrice(symbol, price, position);
@@ -146,6 +145,12 @@ module.exports = {
       return;
     }
 
+    const splited = qty.toString().split(".");
+    if (splited.length == 2 && splited[1].length > 6) {
+      const rest = qty - qty.toFixed(5);
+      qty = qty - rest;
+    }
+
     let order_id;
     for (const order of coinObject.order) {
       if (order.position == position) {
@@ -166,14 +171,20 @@ module.exports = {
 
     // Target Profit, Stop Loss(익절, 손절) 구하는 부분
     if (side == "short") {
-      stop_loss = price + price * TRADE.close_position.loss.loss_percentage;
+      stop_loss =
+        order_price +
+        (order_price * TRADE.close_position.loss.loss_percentage) / 100;
       take_profit =
-        price - price * TRADE.close_position.profit.profit_percentage;
+        order_price -
+        (order_price * TRADE.close_position.loss.loss_percentage) / 100;
     } else {
       // long인 경우,
-      stop_loss = price - price * TRADE.close_position.loss.loss_percentage;
+      stop_loss =
+        order_price -
+        (order_price * TRADE.close_position.loss.loss_percentage) / 100;
       take_profit =
-        price + price * TRADE.close_position.profit.profit_percentage;
+        order_price +
+        (order_price * TRADE.close_position.loss.loss_percentage) / 100;
     }
 
     stop_loss = stop_loss.toFixed(precision_num);
@@ -190,7 +201,7 @@ module.exports = {
 
     const res = await postAxios("/private/linear/order/replace", params);
 
-    if ((res.ret_msg = "OK")) {
+    if (res.ret_code == 0) {
       console.log(symbol, "## 가격 업데이트 ###### position =>", position);
       console.log("현재가 => ", price, "주문가 => ", order_price);
       console.log("## rate_limit", res.rate_limit_status, "###############");
@@ -199,8 +210,11 @@ module.exports = {
       coin_info[idx].update_time = Date.now();
       return true;
     } else {
-      console.log("##### REPLACE_ORDER 실패 #####");
+      console.log(symbol, position, "##### REPLACE_ORDER 실패 #####");
       console.log("/private/linear/order/replace", res);
+      console.log("####################################");
+      console.log(params);
+      console.log("####################################");
     }
   },
 
