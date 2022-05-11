@@ -178,7 +178,10 @@ module.exports = {
     if (res.result.length != 0) {
       coin_info[idx].order = [];
       for (const order of res.result) {
-        if (order.order_status == "New") {
+        if (
+          order.order_status == "New" ||
+          order.order_status == "PartiallyFilled"
+        ) {
           const position = order.order_link_id.split("-")[3];
           coin_info[idx].order.push({
             id: order.order_id,

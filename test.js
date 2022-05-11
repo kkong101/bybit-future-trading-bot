@@ -121,17 +121,11 @@ const test123 = async (symbol = "BTCUSDT") => {
 };
 
 const qwedq = async () => {
-  const set = new Map();
+  const res = await getAxios("/private/linear/order/search", {
+    symbol: "SOLUSDT",
+  });
 
-  set.set("BTC", 31233);
-  set.set("BTC", 31240);
-  set.set("BTC", 31260);
-
-  for (const [key, value] of set) {
-    console.log(key + " , " + value);
-  }
-
-  console.log(set.size);
+  console.log(res);
 };
 
 qwedq();
