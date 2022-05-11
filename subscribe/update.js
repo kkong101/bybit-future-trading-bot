@@ -33,9 +33,6 @@ module.exports = {
 
       // 1,2,3,4번 limit_order들 위치 체크
       await check_position_change(symbol);
-
-      // 포지션 정리할거 있는지 체크
-      await check_position_order(symbol);
     }
   },
 };

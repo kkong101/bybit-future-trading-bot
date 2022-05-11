@@ -26,6 +26,7 @@ const {
   check_on_position_list,
   set_isolated_mode,
   check_available_coin_trade,
+  check_position_order,
 } = require("./setInfo/index");
 
 const API_KEY = SECRET.bybit.API_KEY;
@@ -204,6 +205,8 @@ const main = async () => {
      * 받아온 가격들을 queue에 넣어주고 symbol 단위로 처리해준다.
      */
     setInterval(async () => {
+      // 포지션 정리할거 있는지 체크
+      await check_position_order(symbol);
       for (const coin of coin_info) {
         // 같은 가격이면 요청 보내지 않음.tick_size
 
