@@ -227,8 +227,7 @@ module.exports = {
       // 만약 2의 포지션이 없을 경우에 =>
       // 1을 2로 옮겨준다.
       const idx = coinObject.order.findIndex((e) => e.position == 1);
-      if (idx == -1) return;
-      coinObject.order[idx].position = 2;
+      if (idx != -1) coinObject.order[idx].position = 2;
     }
 
     if (absent_position_list.includes(3) && absent_position_list.includes(4)) {
@@ -250,8 +249,7 @@ module.exports = {
     } else if (absent_position_list.includes(3)) {
       // 4을 3으로 옮겨준다.
       const idx = coinObject.order.findIndex((e) => e.position == 4);
-      if (idx == -1) return;
-      coinObject.order[idx].position = 3;
+      if (idx != -1) coinObject.order[idx].position = 3;
     }
 
     // on_position_list에 1번 혹은 2번 거래가 없고, 2번만 걸려 있을 시 1번 거래 넣어줌.
