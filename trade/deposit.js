@@ -40,6 +40,8 @@ module.exports = {
 
           if (res.ret_msg == "OK") {
             trade.is_circuit_breaker = false;
+          } else {
+            console.log("####### private/linear/order/cancel err");
           }
         });
       }

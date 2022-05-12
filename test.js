@@ -121,11 +121,23 @@ const test123 = async (symbol = "BTCUSDT") => {
 };
 
 const qwedq = async () => {
-  const res = await getAxios("/private/linear/order/search", {
+  const res = await getAxios("/private/linear/position/list", {
     symbol: "SOLUSDT",
   });
+  if (res.result || res.result.length != 0) {
+    for (const position of res.result) {
+      // 만약 구매한 상태라면,
+      if (parseFloat(position.size) != 0) {
+        console.log("구매했음.");
+      } else {
+        console.log("구매하지 않음.");
+      }
+    }
 
-  console.log(res);
+    /**
+     * The End ###
+     */
+  }
 };
 
 qwedq();

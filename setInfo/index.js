@@ -1,11 +1,11 @@
-const { coin_info } = require("../globalState/index");
+const { coin_info, trade } = require("../globalState/index");
 const { getAxios, postAxios } = require("../axios/index");
+const { cancelAll } = require("../trade/deposit");
 const {
   circuit_breaker,
   on_position_coin_list,
 } = require("../globalState/index");
 const { getPercentage } = require("../utils/index");
-const { trade } = require("../globalState/index");
 const {
   get_current_price,
   create_limit_order,
@@ -48,12 +48,11 @@ module.exports = {
     });
     circuit_breaker.btc_price = res.result[0].open;
   },
-  check_circuit_breaker: (price) => {
+  check_circuit_breaker: async (price) => {
     if (isNaN(price) || circuit_breaker.btc_price == 0) return;
     const current_percentage = Math.abs(
       getPercentage(price, circuit_breaker.btc_price)
     );
-    console.log(getPercentage(price, circuit_breaker.btc_price));
 
     // 최초 탐지
     if (
@@ -74,6 +73,7 @@ module.exports = {
     ) {
       // 서킷 브레이커 들어감.
       trade.is_circuit_breaker = true;
+      await cancelAll();
       setTimeout(() => {
         trade.is_circuit_breaker = false;
         console.log("circuit breaker 시간 끝!");
@@ -87,7 +87,6 @@ module.exports = {
       console.log("circuit breaker 시작!!");
       console.log("circuit breaker 시작!!");
       // 모든 주문 취소 해야댐.
-      // 근데 limit rate 때문에 주문을 전부 취소 못할 수도 있음..
       // 이거 예외사항 처리 해줘야댐.
     }
 
@@ -119,9 +118,8 @@ module.exports = {
           let isDuplicated = false;
           for (const our_list of on_position_coin_list) {
             if (our_list.symbol == symbol && our_list.side == position.side) {
-              isDuplicated = true;
-              // 추매인지 확인 진행
               if (parseFloat(position.size) > parseFloat(our_list.qty)) {
+                isDuplicated = true;
                 // 만약 추매이면,
                 // 구입 시간 갱신
                 our_list.time = Date.now();
@@ -135,7 +133,6 @@ module.exports = {
               }
             }
           }
-
           if (!isDuplicated) {
             console.log("on_position_coin_list에 들어감 !!");
             on_position_coin_list.push({
@@ -147,19 +144,37 @@ module.exports = {
               liq_price: parseFloat(position.liq_price),
             });
           }
+        } else {
+          // 구매하지 않은 상태라면
+          // on_position_coin_list에서 빼준다.
+          const idx = on_position_coin_list.findIndex(
+            (e) => e.symbol == symbol
+          );
+          if (idx != -1) on_position_coin_list.splice(idx, 1);
         }
       }
       /**
        * 교차인지 체크해서 만약 교차이면 isolated로 변경
        */
       let is_isolated = true;
+      let is_right_leverage = true;
       for (const position of res.result) {
         if (position.size != 0 && !position.is_isolated) is_isolated = false;
+        if (trade.leverage != parseFloat(position.leverage))
+          is_right_leverage = false;
       }
 
       if (!is_isolated) {
         const thisModule = require("./index");
         await thisModule.set_isolated_mode(symbol);
+      }
+
+      if (!is_right_leverage) {
+        await postAxios("/private/linear/position/set-leverage", {
+          symbol: symbol,
+          buy_leverage: trade.leverage,
+          sell_leverage: trade.leverage,
+        });
       }
 
       /**
@@ -175,6 +190,8 @@ module.exports = {
       symbol,
     });
 
+    console.log(symbol, "kjewfkjbwef", res);
+
     if (res.result.length != 0) {
       coin_info[idx].order = [];
       for (const order of res.result) {
@@ -189,6 +206,8 @@ module.exports = {
           });
         }
       }
+    } else {
+      coin_info[idx].order = [];
     }
   },
   check_position_change: async (symbol) => {
@@ -257,8 +276,8 @@ module.exports = {
       on_position_coin_list.find(
         (e) => e.symbol == symbol && e.side == "Sell"
       ) == null &&
-      !absent_position_list.includes(1) &&
-      absent_position_list.includes(2)
+      !absent_position_list.includes(2) &&
+      absent_position_list.includes(1)
     ) {
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [1]);
     }
@@ -339,8 +358,8 @@ module.exports = {
     const params = {
       symbol: symbol,
       is_isolated: true,
-      buy_leverage: 1,
-      sell_leverage: 1,
+      buy_leverage: trade.leverage,
+      sell_leverage: trade.leverage,
     };
 
     await postAxios("/private/linear/position/switch-isolated", params);

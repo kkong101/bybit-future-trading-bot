@@ -32,15 +32,6 @@ module.exports = {
             console.log("leverage : ", e.leverage);
             console.log("using_money_rate", e.using_money_rate);
 
-            const res = await postAxios(
-              "/private/linear/position/set-leverage",
-              {
-                symbol: "BTCUSDT",
-                buy_leverage: e.leverage,
-                sell_leverage: e.leverage,
-              }
-            );
-
             // 잔고 업데이트 부분.
             await setBalance();
 

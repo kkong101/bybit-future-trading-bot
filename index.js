@@ -27,6 +27,7 @@ const {
   set_isolated_mode,
   check_available_coin_trade,
   check_position_order,
+  check_circuit_breaker,
 } = require("./setInfo/index");
 
 const API_KEY = SECRET.bybit.API_KEY;
@@ -206,10 +207,10 @@ const main = async () => {
      */
     setInterval(async () => {
       // 포지션 정리할거 있는지 체크
-      await check_position_order(symbol);
+      if (!trade.is_circuit_breaker) await check_circuit_breaker();
       for (const coin of coin_info) {
         // 같은 가격이면 요청 보내지 않음.tick_size
-
+        await check_position_order(coin.symbol);
         if (
           coin.previous_price > coin.current_price + coin.tick_size * 2 ||
           coin.previous_price < coin.current_price - coin.tick_size * 2

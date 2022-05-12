@@ -267,7 +267,9 @@ module.exports = {
       symbol: symbol,
     });
 
-    const qty = parseFloat(res.result[side == "Buy" ? 0 : 1].size);
+    console.log("@@@close_one_position@@@", res);
+
+    const qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
     for (const e of on_position_coin_list) {
       if (symbol == e.symbol && side == e.side) {
         const params = {
