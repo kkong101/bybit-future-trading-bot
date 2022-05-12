@@ -117,7 +117,10 @@ module.exports = {
         if (parseFloat(position.size) != 0) {
           let isDuplicated = false;
           for (const our_list of on_position_coin_list) {
-            if (our_list.symbol == symbol && our_list.side == position.side) {
+            if (
+              our_list.symbol == position.symbol &&
+              our_list.side == position.side
+            ) {
               if (parseFloat(position.size) > parseFloat(our_list.qty)) {
                 isDuplicated = true;
                 // 만약 추매이면,
@@ -132,17 +135,17 @@ module.exports = {
                 our_list.liq_price = parseFloat(position.liq_price);
               }
             }
-          }
-          if (!isDuplicated) {
-            console.log("on_position_coin_list에 들어감 !!");
-            on_position_coin_list.push({
-              symbol: symbol,
-              side: position.side,
-              price: position.entry_price,
-              qty: position.size,
-              time: Date.now(),
-              liq_price: parseFloat(position.liq_price),
-            });
+            if (!isDuplicated) {
+              console.log("on_position_coin_list에 들어감 !!");
+              on_position_coin_list.push({
+                symbol: symbol,
+                side: position.side,
+                price: position.entry_price,
+                qty: position.size,
+                time: Date.now(),
+                liq_price: parseFloat(position.liq_price),
+              });
+            }
           }
         } else {
           // 구매하지 않은 상태라면
