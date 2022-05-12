@@ -95,7 +95,7 @@ const main = async () => {
       symbol: coin.symbol,
       updated: Date.now() + i,
     });
-    i += 1300;
+    i += 2500;
   }
 
   /**

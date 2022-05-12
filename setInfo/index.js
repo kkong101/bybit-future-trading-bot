@@ -110,42 +110,37 @@ module.exports = {
     const res = await getAxios("/private/linear/position/list", {
       symbol: symbol,
     });
-
     if (res.result || res.result.length != 0) {
       for (const position of res.result) {
+        console.log("fkwefawfe", position);
         // 만약 구매한 상태라면,
         if (parseFloat(position.size) != 0) {
-          let isDuplicated = false;
-          for (const our_list of on_position_coin_list) {
-            if (
-              our_list.symbol == position.symbol &&
-              our_list.side == position.side
-            ) {
-              if (parseFloat(position.size) > parseFloat(our_list.qty)) {
-                isDuplicated = true;
-                // 만약 추매이면,
-                // 구입 시간 갱신
-                our_list.time = Date.now();
-                // 수량 갱신
-                our_list.qty = position.size;
-                // 가격 갱신
-                our_list.price = position.entry_price;
+          const onPositionObj = on_position_coin_list.find(
+            (e) => e.symbol == position.symbol && e.side == position.side
+          );
+          if (onPositionObj) {
+            if (parseFloat(position.size) > parseFloat(onPositionObj.qty)) {
+              // 만약 추매이면,
+              // 구입 시간 갱신
+              onPositionObj.time = Date.now();
+              // 수량 갱신
+              onPositionObj.qty = position.size;
+              // 가격 갱신
+              onPositionObj.price = position.entry_price;
 
-                // 청산가 갱신
-                our_list.liq_price = parseFloat(position.liq_price);
-              }
+              // 청산가 갱신
+              onPositionObj.liq_price = parseFloat(position.liq_price);
             }
-            if (!isDuplicated) {
-              console.log("on_position_coin_list에 들어감 !!");
-              on_position_coin_list.push({
-                symbol: symbol,
-                side: position.side,
-                price: position.entry_price,
-                qty: position.size,
-                time: Date.now(),
-                liq_price: parseFloat(position.liq_price),
-              });
-            }
+          } else if (onPositionObj == null) {
+            console.log("on_position_coin_list에 들어감 !!");
+            on_position_coin_list.push({
+              symbol: symbol,
+              side: position.side,
+              price: position.entry_price,
+              qty: position.size,
+              time: Date.now(),
+              liq_price: parseFloat(position.liq_price),
+            });
           }
         } else {
           // 구매하지 않은 상태라면
@@ -179,7 +174,6 @@ module.exports = {
           sell_leverage: trade.leverage,
         });
       }
-
       /**
        * The End ###
        */
@@ -305,6 +299,7 @@ module.exports = {
         const current_price = parseFloat(coinObj.current_price);
 
         console.log(
+          position.symbol,
           "## 포지션 정리까지 남은 시간 ",
           Date.now() - position.time
         );
