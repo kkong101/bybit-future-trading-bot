@@ -32,9 +32,13 @@ module.exports = {
       });
 
     orderedParams = "?" + orderedParams.substr(0, orderedParams.length - 1);
-
-    const res = await axios.get(base_url + api_url + orderedParams);
-    return res.data;
+    try {
+      const res = await axios.get(base_url + api_url + orderedParams);
+      return res.data;
+    } catch (error) {
+      console.log("####### getAxios err ", error);
+      return null;
+    }
   },
   postAxios: async (api_url, param) => {
     console.log("########## postAxios 호출 ##########", param?.symbol);
@@ -52,7 +56,12 @@ module.exports = {
 
     params["sign"] = getSignature(params);
 
-    const res = await axios.post(base_url + api_url, params);
-    return res.data;
+    try {
+      const res = await axios.post(base_url + api_url, params);
+      return res.data;
+    } catch (error) {
+      console.log("####### postAxios err ", error);
+      return null;
+    }
   },
 };
