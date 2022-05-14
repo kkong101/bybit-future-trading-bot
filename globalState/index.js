@@ -51,8 +51,6 @@ module.exports = {
    */
   circuit_breaker: {
     btc_price: 0,
-    checked_time: Date.now(),
     signal_start_time: null,
-    end_circuit_breaker_time: null,
   },
 };

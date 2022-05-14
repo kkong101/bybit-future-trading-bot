@@ -39,15 +39,6 @@ module.exports = {
       }
     }
   },
-  set_circuit_breaker_condition: async () => {
-    circuit_breaker.checked_time = Date.now();
-    const res = await getAxios("/public/linear/kline", {
-      symbol: "BTCUSDT",
-      interval: 1,
-      from: Math.ceil(Date.now() / 1000) - 60 * 5,
-    });
-    circuit_breaker.btc_price = res.result[0].open;
-  },
   check_circuit_breaker: async (price) => {
     if (isNaN(price) || circuit_breaker.btc_price == 0) return;
     const current_percentage = Math.abs(
@@ -73,21 +64,17 @@ module.exports = {
     ) {
       // 서킷 브레이커 들어감.
       trade.is_circuit_breaker = true;
-      await cancelAll();
       setTimeout(() => {
         trade.is_circuit_breaker = false;
+        circuit_breaker.signal_start_time = null;
         console.log("circuit breaker 시간 끝!");
       }, TRADE.circuit_breaker.time * 1000);
-      circuit_breaker.signal_start_time = null;
-      circuit_breaker.end_circuit_breaker_time =
-        Date.now() + TRADE.circuit_breaker.time * 1000;
       console.log("circuit breaker 시작!!");
       console.log("circuit breaker 시작!!");
       console.log("circuit breaker 시작!!");
       console.log("circuit breaker 시작!!");
       console.log("circuit breaker 시작!!");
-      // 모든 주문 취소 해야댐.
-      // 이거 예외사항 처리 해줘야댐.
+      await cancelAll();
     }
 
     // 1분 유지 하지 못할 시 다시 reset해줌.
@@ -110,7 +97,7 @@ module.exports = {
     const res = await getAxios("/private/linear/position/list", {
       symbol: symbol,
     });
-    if (res.result || res.result.length != 0) {
+    if (res?.result && res.result.length != 0) {
       for (const position of res.result) {
         console.log("fkwefawfe", position);
         // 만약 구매한 상태라면,
@@ -146,7 +133,7 @@ module.exports = {
           // 구매하지 않은 상태라면
           // on_position_coin_list에서 빼준다.
           const idx = on_position_coin_list.findIndex(
-            (e) => e.symbol == symbol
+            (e) => e.symbol == symbol && position.side == e.side
           );
           if (idx != -1) on_position_coin_list.splice(idx, 1);
         }
@@ -186,8 +173,9 @@ module.exports = {
     const res = await getAxios("/private/linear/order/search", {
       symbol,
     });
-
     console.log(symbol, "kjewfkjbwef", res);
+
+    if (res == null) return;
 
     if (res.result.length != 0) {
       coin_info[idx].order = [];
@@ -217,11 +205,21 @@ module.exports = {
     const position_list = coinObject.order.map((e) => e.position);
     const full_position_list = [1, 2, 3, 4];
 
+    console.log(symbol, "### position_list ", position_list);
+
     for (const position of full_position_list) {
       if (!position_list.includes(position)) {
         absent_position_list.push(position);
       }
     }
+
+    console.log(
+      symbol,
+      "### BEFORE absent_position_list",
+      absent_position_list
+    );
+
+    if (absent_position_list.length == 0) return;
 
     // 만약 1, 2의 포지션이 없을 경우에 =>
     if (absent_position_list.includes(1) && absent_position_list.includes(2)) {
@@ -239,11 +237,17 @@ module.exports = {
           [1, 2]
         );
       }
-    } else if (absent_position_list.includes(2)) {
+    } else if (
+      absent_position_list.includes(2) &&
+      !absent_position_list.includes(1)
+    ) {
       // 만약 2의 포지션이 없을 경우에 =>
       // 1을 2로 옮겨준다.
-      const idx = coinObject.order.findIndex((e) => e.position == 1);
-      if (idx != -1) coinObject.order[idx].position = 2;
+      console.log(symbol, "#### position 변경 ");
+      console.log("before", coinObject.order);
+      const orderObj = coinObject.order.find((e) => e.position == 1);
+      orderObj.position = 2;
+      console.log("after", coinObject.order);
     }
 
     if (absent_position_list.includes(3) && absent_position_list.includes(4)) {
@@ -262,31 +266,41 @@ module.exports = {
           [3, 4]
         );
       }
-    } else if (absent_position_list.includes(3)) {
+    } else if (
+      absent_position_list.includes(3) &&
+      !absent_position_list.includes(4)
+    ) {
       // 4을 3으로 옮겨준다.
-      const idx = coinObject.order.findIndex((e) => e.position == 4);
-      if (idx != -1) coinObject.order[idx].position = 3;
+      console.log(symbol, "#### position 변경 ");
+      console.log("before", coinObject.order);
+      const orderObj = coinObject.order.find((e) => e.position == 4);
+      orderObj.position = 3;
+      console.log("after", coinObject.order);
     }
+
+    console.log("#### absent_position_list", symbol, absent_position_list);
 
     // on_position_list에 1번 혹은 2번 거래가 없고, 2번만 걸려 있을 시 1번 거래 넣어줌.
     if (
-      on_position_coin_list.find(
+      !on_position_coin_list.find(
         (e) => e.symbol == symbol && e.side == "Sell"
-      ) == null &&
+      ) &&
       !absent_position_list.includes(2) &&
       absent_position_list.includes(1)
     ) {
+      console.log("#### 1번 position 주문 넣어줌");
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [1]);
     }
 
     // on_position_list에 3번 혹은 4번 거래가 없고, 3번만 걸려 있을 시 4번 거래 넣어줌.
     if (
-      on_position_coin_list.find(
+      !on_position_coin_list.find(
         (e) => e.symbol == symbol && e.side == "Buy"
-      ) == null &&
+      ) &&
       !absent_position_list.includes(3) &&
       absent_position_list.includes(4)
     ) {
+      console.log("#### 4번 position 주문 넣어줌");
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [4]);
     }
   },

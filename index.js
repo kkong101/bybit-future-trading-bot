@@ -174,6 +174,9 @@ const main = async () => {
       ws.subscribe(`trade.${e.symbol}`);
     });
 
+    if (coin_info.find((e) => e.symbol == "BTCUSDT") == null)
+      ws.subscribe(`trade.BTCUSDT`);
+
     ws.on("update", async (data) => {
       if (!isReady) return;
       if (trade.is_circuit_breaker) return;
@@ -197,9 +200,12 @@ const main = async () => {
       const price = parseFloat(obj.price);
       const symbol = obj.symbol;
       const idx = coin_info.findIndex((e) => e.symbol == symbol);
+      if (symbol == "BTCUSDT") {
+        if (!trade.is_circuit_breaker) await check_circuit_breaker(price);
+      }
 
       // 코인 가격 업데이트 해줌.
-      coin_info[idx].current_price = price;
+      if (idx != -1) coin_info[idx].current_price = price;
     });
 
     /**
@@ -207,7 +213,6 @@ const main = async () => {
      */
     setInterval(async () => {
       // 포지션 정리할거 있는지 체크
-      if (!trade.is_circuit_breaker) await check_circuit_breaker();
       for (const coin of coin_info) {
         // 같은 가격이면 요청 보내지 않음.tick_size
         await check_position_order(coin.symbol);

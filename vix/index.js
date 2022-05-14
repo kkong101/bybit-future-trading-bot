@@ -7,6 +7,32 @@ const { setBalance } = require("../trade/deposit");
 
 module.exports = {
   setVix: async () => {
+    // ## 시간 출력
+    const today = new Date();
+
+    const month = ("0" + (today.getMonth() + 1)).slice(-2);
+    const day = ("0" + today.getDate()).slice(-2);
+
+    const hours = ("0" + today.getHours()).slice(-2);
+    const minutes = ("0" + today.getMinutes()).slice(-2);
+    const seconds = ("0" + today.getSeconds()).slice(-2);
+
+    const timeString =
+      "시간 => " +
+      month +
+      "-" +
+      day +
+      " / " +
+      hours +
+      ":" +
+      minutes +
+      ":" +
+      seconds;
+
+    console.log(timeString);
+
+    // ## 시간 끝
+
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.goto("https://datavalue.dunamu.com/feargreedindex");

@@ -19,7 +19,6 @@ const {
 const COINS = require("./COINS.json");
 
 const {
-  set_circuit_breaker_condition,
   check_circuit_breaker,
   check_on_position_list,
   check_limit_order_list,
@@ -121,23 +120,30 @@ const test123 = async (symbol = "BTCUSDT") => {
 };
 
 const qwedq = async () => {
-  const res = await getAxios("/private/linear/position/list", {
-    symbol: "SOLUSDT",
-  });
-  if (res.result || res.result.length != 0) {
-    for (const position of res.result) {
-      // 만약 구매한 상태라면,
-      if (parseFloat(position.size) != 0) {
-        console.log("구매했음.");
-      } else {
-        console.log("구매하지 않음.");
-      }
-    }
-
-    /**
-     * The End ###
-     */
-  }
+  const test = [
+    {
+      name: "gdgd",
+      order: [
+        { id: "0091e4a5-ef0b-4a51-b60c-66bcd3fc6218", position: 4 },
+        { id: "7fabea12-9a21-4d8f-bebe-47307fbdc840", position: 3 },
+        { id: "c33d5991-76d2-43f4-b910-22cfe6542471", position: 2 },
+        { id: "e8237014-152b-4190-aba6-4e69eafcba9e", position: 1 },
+      ],
+    },
+    {
+      name: "zzz",
+      order: [
+        { id: "0091e4a5-ef0b-4a51-b60c-66bcd3fc6218", position: 4 },
+        { id: "7fabea12-9a21-4d8f-bebe-47307fbdc840", position: 3 },
+        { id: "c33d5991-76d2-43f4-b910-22cfe6542471", position: 2 },
+        { id: "e8237014-152b-4190-aba6-4e69eafcba9e", position: 1 },
+      ],
+    },
+  ];
+  const obj = test.find((e) => e.name == "zzz");
+  const obj22 = obj.order.find((e) => e.position == 4);
+  obj22.position = -1;
+  console.log(test[1]);
 };
 
 qwedq();

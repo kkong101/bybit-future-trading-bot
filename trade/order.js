@@ -58,7 +58,8 @@ module.exports = {
       order_link_id: order_link_id,
       take_profit: take_profit.toFixed(precision_num),
       stop_loss: stop_loss.toFixed(precision_num),
-      position_idx: 1,
+      tp_trigger_by: "LastPrice",
+      sl_trigger_by: "LastPrice",
     };
 
     const res = await postAxios("/private/linear/order/create", params);
@@ -113,7 +114,8 @@ module.exports = {
       order_link_id: order_link_id,
       take_profit: take_profit.toFixed(precision_num),
       stop_loss: stop_loss.toFixed(precision_num),
-      position_idx: 2,
+      tp_trigger_by: "LastPrice",
+      sl_trigger_by: "LastPrice",
     };
     const res = await postAxios("/private/linear/order/create", params);
     return res;
@@ -201,7 +203,7 @@ module.exports = {
 
     const res = await postAxios("/private/linear/order/replace", params);
 
-    if (res.ret_code == 0) {
+    if (res?.ret_code == 0) {
       console.log(symbol, "## 가격 업데이트 ###### position =>", position);
       console.log("현재가 => ", price, "주문가 => ", order_price);
       console.log("## rate_limit", res.rate_limit_status, "###############");
@@ -248,6 +250,7 @@ module.exports = {
       if (res.rate_limit_status == "0") {
         // 만약 limit_rate가 전부다 한 상태라면,
         trade.is_circuit_breaker = true;
+        console.log("##### close_all_position breaker 발동");
 
         const after_time = parseInt(res.rate_limit_reset_ms) - Date.now();
         setTimeout(async () => {
@@ -299,6 +302,7 @@ module.exports = {
         if (res.rate_limit_status == "0") {
           // 만약 limit_rate가 전부다 한 상태라면,
           trade.is_circuit_breaker = true;
+          console.log("##### close_one_position breaker 발동");
 
           const after_time = parseInt(res.rate_limit_reset_ms) - Date.now();
           setTimeout(async () => {

@@ -17,7 +17,6 @@ module.exports = {
         }
       }
       for (const order_id of order_list) {
-        trade.is_circuit_breaker = true;
         await postAxios("/private/linear/order/cancel", {
           symbol: cois.symbol,
           order_id: order_id,
@@ -31,17 +30,14 @@ module.exports = {
                 symbol: cois.symbol,
                 order_id: order_id,
               });
-
-              setTimeout(() => {
-                trade.is_circuit_breaker = false;
-              }, 1000);
             }, after_time + 500);
           }
 
           if (res.ret_msg == "OK") {
-            trade.is_circuit_breaker = false;
+            console.log("####### private/linear/order/cancel cancelALL 성공");
           } else {
             console.log("####### private/linear/order/cancel err");
+            console.log(res);
           }
         });
       }
