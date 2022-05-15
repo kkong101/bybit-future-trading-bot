@@ -200,8 +200,8 @@ module.exports = {
       order_id: order_id,
       p_r_price: order_price,
       p_r_qty: qty,
-      take_profit: take_profit,
-      stop_loss: stop_loss,
+      // take_profit: take_profit,
+      // stop_loss: stop_loss,
     };
 
     const res = await postAxios("/private/linear/order/replace", params);
@@ -299,7 +299,7 @@ module.exports = {
       console.log(symbol, "### position 정리 ! ", res);
 
       // 판매가 완료 되었으면,  on_position_coin_list 에서 빼줌 .
-      if (res.result != null) {
+      if (res?.ret_msg == "OK" && res?.ret_code == 0) {
         const idx = on_position_coin_list.findIndex(
           (e) => e.symbol == symbol && e.side == side
         );

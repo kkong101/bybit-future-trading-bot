@@ -315,6 +315,22 @@ module.exports = {
           "## 포지션 정리까지 남은 시간 ",
           Date.now() - position.time
         );
+        console.log(position.symbol, "## 청산 가격 => ", coinObj.liq_price);
+        console.log(
+          "숏일경우 익절 가격 => ",
+          position.price -
+            position.price * TRADE.close_position.profit.profit_percentage
+        );
+        console.log(
+          "롱일경우 익절 가격 => ",
+          position.price +
+            position.price * TRADE.close_position.profit.profit_percentage
+        );
+        console.log(
+          "### position 들어간 금액  => ",
+          position.price,
+          position.side
+        );
 
         /**
          * 청산가격 방어 check 하는 부분
