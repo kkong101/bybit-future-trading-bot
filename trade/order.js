@@ -42,9 +42,10 @@ module.exports = {
     }
 
     // 청산가 정하는 부분 .
-    const stop_loss = price - price * TRADE.close_position.loss.loss_percentage;
+    const stop_loss =
+      price - price * TRADE.close_position.loss.loss_percentage * 2;
     const take_profit =
-      price + price * TRADE.close_position.profit.profit_percentage;
+      price + price * TRADE.close_position.profit.profit_percentage * 2;
 
     const params = {
       side: "Buy",
@@ -99,9 +100,10 @@ module.exports = {
       precision_num = stringed_number.split(".")[1].length;
     }
 
-    const stop_loss = price + price * TRADE.close_position.loss.loss_percentage;
+    const stop_loss =
+      price + price * TRADE.close_position.loss.loss_percentage * 2;
     const take_profit =
-      price - price * TRADE.close_position.profit.profit_percentage;
+      price - price * TRADE.close_position.profit.profit_percentage * 2;
     const params = {
       side: "Sell",
       symbol: symbol,
@@ -122,6 +124,7 @@ module.exports = {
   },
   replace_order: async (symbol, price, idx, position) => {
     const coinObject = coin_info[idx];
+    if (!coinObject.order.find((e) => e.position == position)) return;
 
     const available_balance =
       (trade.total_money * trade.using_money_rate) / (4 * coin_info.length);
@@ -178,7 +181,7 @@ module.exports = {
         (order_price * TRADE.close_position.loss.loss_percentage) / 100;
       take_profit =
         order_price -
-        (order_price * TRADE.close_position.loss.loss_percentage) / 100;
+        (order_price * TRADE.close_position.profit.profit_percentage) / 100;
     } else {
       // long인 경우,
       stop_loss =
@@ -186,7 +189,7 @@ module.exports = {
         (order_price * TRADE.close_position.loss.loss_percentage) / 100;
       take_profit =
         order_price +
-        (order_price * TRADE.close_position.loss.loss_percentage) / 100;
+        (order_price * TRADE.close_position.profit.profit_percentage) / 100;
     }
 
     stop_loss = stop_loss.toFixed(precision_num);
@@ -204,7 +207,8 @@ module.exports = {
     const res = await postAxios("/private/linear/order/replace", params);
 
     if (res?.ret_code == 0) {
-      console.log(symbol, "## 가격 업데이트 ###### position =>", position);
+      console.log(symbol, "## 가격 업데이트 성공 ###### position =>", position);
+      console.log("take_profit => ", take_profit, "stop_loss => ", stop_loss);
       console.log("현재가 => ", price, "주문가 => ", order_price);
       console.log("## rate_limit", res.rate_limit_status, "###############");
       console.log("## rate_limit", res, "###############");
@@ -214,6 +218,7 @@ module.exports = {
     } else {
       console.log(symbol, position, "##### REPLACE_ORDER 실패 #####");
       console.log("/private/linear/order/replace", res);
+      console.log("현재 가격 => ", price);
       console.log("####################################");
       console.log(params);
       console.log("####################################");
@@ -270,54 +275,59 @@ module.exports = {
       symbol: symbol,
     });
 
-    console.log("@@@close_one_position@@@", res);
-
     const qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
-    for (const e of on_position_coin_list) {
-      if (symbol == e.symbol && side == e.side) {
-        const params = {
-          symbol: symbol,
-          side: side == "Buy" ? "Sell" : "Buy",
-          order_type: "Market",
-          qty: qty,
-          reduce_only: true,
-          time_in_force: "FillOrKill",
-          close_on_trigger: false,
-        };
 
-        const res = await postAxios("/private/linear/order/create", params);
+    console.log(symbol, side, qty, "### close_one_position", res);
+    console.log(on_position_coin_list);
+    const positionObj = on_position_coin_list.find(
+      (e) => e.symbol == symbol && e.side == side
+    );
+    console.log("IMPORTANT !! ", positionObj);
+    if (positionObj) {
+      const params = {
+        symbol: symbol,
+        side: side == "Buy" ? "Sell" : "Buy",
+        order_type: "Market",
+        qty: qty,
+        reduce_only: true,
+        time_in_force: "FillOrKill",
+        close_on_trigger: false,
+      };
 
-        // 판매가 완료 되었으면,  on_position_coin_list 에서 빼줌 .
-        if (res.result != null) {
-          const idx = on_position_coin_list.findIndex(
-            (e) => e.symbol == symbol && e.side == side
-          );
-          console.log("삭제할 side", side);
-          console.log("삭제된 idx, ", idx);
-          on_position_coin_list.splice(idx, 1);
+      const res = await postAxios("/private/linear/order/create", params);
 
-          console.log("익절 / 손절해서 on_position_list에서 제외 해줌.");
-        }
+      console.log(symbol, "### position 정리 ! ", res);
 
-        if (res.rate_limit_status == "0") {
-          // 만약 limit_rate가 전부다 한 상태라면,
-          trade.is_circuit_breaker = true;
-          console.log("##### close_one_position breaker 발동");
-
-          const after_time = parseInt(res.rate_limit_reset_ms) - Date.now();
-          setTimeout(async () => {
-            await postAxios("/private/linear/order/create", params);
-
-            setTimeout(() => {
-              trade.is_circuit_breaker = false;
-            }, 1000);
-          }, after_time + 500);
-        }
-
-        return res;
-      } else {
-        return;
+      // 판매가 완료 되었으면,  on_position_coin_list 에서 빼줌 .
+      if (res.result != null) {
+        const idx = on_position_coin_list.findIndex(
+          (e) => e.symbol == symbol && e.side == side
+        );
+        console.log("삭제할 side", side);
+        console.log("삭제된 idx, ", idx);
+        on_position_coin_list.splice(idx, 1);
+        console.log("익절 / 손절해서 on_position_list에서 제외 해줌.");
       }
+
+      if (res.rate_limit_status == "0") {
+        // 만약 limit_rate가 전부다 한 상태라면,
+        trade.is_circuit_breaker = true;
+        console.log("##### close_one_position breaker 발동");
+
+        const after_time = parseInt(res.rate_limit_reset_ms) - Date.now();
+        setTimeout(async () => {
+          await postAxios("/private/linear/order/create", params);
+
+          setTimeout(() => {
+            trade.is_circuit_breaker = false;
+          }, 1000);
+        }, after_time + 500);
+      }
+
+      return res;
+    } else {
+      console.log("발견 못해서 return !!! ", symbol);
+      return;
     }
   },
   get_current_price: async (symbol) => {

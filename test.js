@@ -120,30 +120,17 @@ const test123 = async (symbol = "BTCUSDT") => {
 };
 
 const qwedq = async () => {
-  const test = [
-    {
-      name: "gdgd",
-      order: [
-        { id: "0091e4a5-ef0b-4a51-b60c-66bcd3fc6218", position: 4 },
-        { id: "7fabea12-9a21-4d8f-bebe-47307fbdc840", position: 3 },
-        { id: "c33d5991-76d2-43f4-b910-22cfe6542471", position: 2 },
-        { id: "e8237014-152b-4190-aba6-4e69eafcba9e", position: 1 },
-      ],
-    },
-    {
-      name: "zzz",
-      order: [
-        { id: "0091e4a5-ef0b-4a51-b60c-66bcd3fc6218", position: 4 },
-        { id: "7fabea12-9a21-4d8f-bebe-47307fbdc840", position: 3 },
-        { id: "c33d5991-76d2-43f4-b910-22cfe6542471", position: 2 },
-        { id: "e8237014-152b-4190-aba6-4e69eafcba9e", position: 1 },
-      ],
-    },
-  ];
-  const obj = test.find((e) => e.name == "zzz");
-  const obj22 = obj.order.find((e) => e.position == 4);
-  obj22.position = -1;
-  console.log(test[1]);
+  const params = {
+    symbol: symbol,
+    side: side == "Buy" ? "Sell" : "Buy",
+    order_type: "Market",
+    qty: qty,
+    reduce_only: true,
+    time_in_force: "FillOrKill",
+    close_on_trigger: false,
+  };
+
+  const res = await postAxios("/private/linear/order/create", params);
 };
 
 qwedq();

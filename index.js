@@ -230,7 +230,6 @@ const main = async () => {
             setTimeout(async () => {
               await replace_order(coin.symbol, coin.current_price, idx, p);
             }, time);
-
             time += 100;
           }
         } else {

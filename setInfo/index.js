@@ -205,7 +205,7 @@ module.exports = {
     const position_list = coinObject.order.map((e) => e.position);
     const full_position_list = [1, 2, 3, 4];
 
-    console.log(symbol, "### position_list ", position_list);
+    console.log(symbol, "### BEFORE position_list ", position_list);
 
     for (const position of full_position_list) {
       if (!position_list.includes(position)) {
@@ -243,11 +243,8 @@ module.exports = {
     ) {
       // 만약 2의 포지션이 없을 경우에 =>
       // 1을 2로 옮겨준다.
-      console.log(symbol, "#### position 변경 ");
-      console.log("before", coinObject.order);
       const orderObj = coinObject.order.find((e) => e.position == 1);
-      orderObj.position = 2;
-      console.log("after", coinObject.order);
+      if (orderObj) orderObj.position = 2;
     }
 
     if (absent_position_list.includes(3) && absent_position_list.includes(4)) {
@@ -271,14 +268,9 @@ module.exports = {
       !absent_position_list.includes(4)
     ) {
       // 4을 3으로 옮겨준다.
-      console.log(symbol, "#### position 변경 ");
-      console.log("before", coinObject.order);
       const orderObj = coinObject.order.find((e) => e.position == 4);
-      orderObj.position = 3;
-      console.log("after", coinObject.order);
+      if (orderObj) orderObj.position = 3;
     }
-
-    console.log("#### absent_position_list", symbol, absent_position_list);
 
     // on_position_list에 1번 혹은 2번 거래가 없고, 2번만 걸려 있을 시 1번 거래 넣어줌.
     if (
@@ -303,6 +295,12 @@ module.exports = {
       console.log("#### 4번 position 주문 넣어줌");
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [4]);
     }
+
+    console.log(
+      "#### AFTER on_position_coin_list",
+      symbol,
+      on_position_coin_list
+    );
   },
 
   check_position_order: async (symbol) => {
@@ -343,10 +341,7 @@ module.exports = {
         ) {
           // 해당하는 포지션 작업이 왔다면, 설정파일에 있는 시간를 체크함
           // 설정파일에서 설정한 시간이 지났다면 포지션 정리
-          console.log(
-            symbol,
-            "### 시간이 지나서 코인 포지션을 정리하였습니다."
-          );
+          console.log(symbol, "### close_one_position()로 전달  ");
           await close_one_position(symbol, position.side);
         } else if (
           (position.side == "Sell" &&
@@ -360,7 +355,10 @@ module.exports = {
                 position.price * TRADE.close_position.profit.profit_percentage)
         ) {
           // 만약 롱과 숏이 설정해놓은 퍼샌테이지 이상의 익절 상태라면,
-          console.log(symbol, "#### 익절 로직에 의해 코인이 익절되었습니다.");
+          console.log(
+            symbol,
+            "#### 익절/손절 로직에 의해 close_one_position()에 전달"
+          );
           await close_one_position(symbol, position.side);
         }
       }
