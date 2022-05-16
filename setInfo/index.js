@@ -175,9 +175,9 @@ module.exports = {
     });
     console.log(symbol, "kjewfkjbwef", res);
 
-    if (res == null) return;
+    if (res == null || res.result == undefined) return;
 
-    if (res.result.length != 0) {
+    if (res.result?.length != 0) {
       coin_info[idx].order = [];
       for (const order of res.result) {
         if (
