@@ -2,30 +2,14 @@ const SECRET = require("./SECRET.json");
 const { cancelAll, setBalance } = require("./trade/deposit");
 const { setVix } = require("./vix/index");
 const { WebsocketClient } = require("bybit-api");
-const {
-  coin_info,
-  on_position_coin_list,
-  absent_position_list,
-} = require("./globalState/index");
-const { trade, create_order_queue } = require("./globalState/index");
+const { coin_info, on_position_coin_list } = require("./globalState/index");
+const { trade } = require("./globalState/index");
 const COINS = require("./COINS.json");
 const TRADE = require("./TRADE.json");
-const {
-  order_long_position,
-  replace_order,
-  order_short_position,
-  close_one_position,
-  close_all_position,
-  create_limit_order,
-  get_current_price,
-} = require("./trade/order");
-
+const { replace_order, create_limit_order } = require("./trade/order");
 const { check_send_order } = require("./subscribe/update");
 const {
   getCoinInfo,
-  check_on_position_list,
-  set_isolated_mode,
-  check_available_coin_trade,
   check_position_order,
   check_circuit_breaker,
 } = require("./setInfo/index");
@@ -36,13 +20,19 @@ const PRIVATE_KEY = SECRET.bybit.API_SECRET;
 const wsConfig = {
   key: API_KEY,
   secret: PRIVATE_KEY,
-  wsUrl: "wss://stream-testnet.bybit.com/realtime_public",
+  wsUrl:
+    SECRET.mode == "live"
+      ? SECRET.websocket.public.live
+      : SECRET.websocket.public.test,
 };
 
 const wsConfigUpdate = {
   key: API_KEY,
   secret: PRIVATE_KEY,
-  wsUrl: "wss://stream-testnet.bybit.com/realtime_private",
+  wsUrl:
+    SECRET.mode == "live"
+      ? SECRET.websocket.private.live
+      : SECRET.websocket.private.test,
 };
 
 // 시작했을 때 코인 정보 가져오는 부분

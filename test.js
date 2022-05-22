@@ -120,17 +120,34 @@ const test123 = async (symbol = "BTCUSDT") => {
 };
 
 const qwedq = async () => {
+  const res3 = await getAxios("/private/linear/position/list", {
+    symbol: "SOLUSDT",
+  });
+
+  console.log(res3);
+
   const params = {
-    symbol: symbol,
-    side: side == "Buy" ? "Sell" : "Buy",
-    order_type: "Market",
-    qty: qty,
-    reduce_only: true,
-    time_in_force: "FillOrKill",
+    side: "Buy",
+    symbol: "SOLUSDT",
+    order_type: "Limit",
+    qty: 0.1,
+    price: 54,
+    time_in_force: "GoodTillCancel",
+    reduce_only: false,
     close_on_trigger: false,
+    take_profit: 55,
+    stop_loss: 53,
+    tp_trigger_by: "LastPrice",
+    sl_trigger_by: "LastPrice",
   };
 
   const res = await postAxios("/private/linear/order/create", params);
+
+  const res2 = await getAxios("/private/linear/order/search", {
+    symbol: "SOLUSDT",
+  });
+
+  console.log(res2);
 };
 
 qwedq();

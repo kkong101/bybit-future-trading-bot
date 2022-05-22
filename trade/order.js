@@ -200,8 +200,8 @@ module.exports = {
       order_id: order_id,
       p_r_price: order_price,
       p_r_qty: qty,
-      // take_profit: take_profit,
-      // stop_loss: stop_loss,
+      take_profit: take_profit,
+      stop_loss: stop_loss,
     };
 
     const res = await postAxios("/private/linear/order/replace", params);
