@@ -77,4 +77,12 @@ module.exports = {
      * THE END ####
      */
   },
+  checkNullish: (res) => {
+    if (res == null || res == undefined) {
+      console.log("##### err Null or undefined 발견");
+      return true;
+    } else {
+      return false;
+    }
+  },
 };

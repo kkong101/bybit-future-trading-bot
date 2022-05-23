@@ -2,12 +2,10 @@
   "white_list": [
     { "symbol": "LTCUSDT", "tick_size": 0, "percentage": 0.3 },
     { "symbol": "NEARUSDT", "tick_size": 0, "percentage": 0.3 },
-    { "symbol": "LINKUSDT", "tick_size": 0, "percentage": 0.3 }
+    { "symbol": "LINKUSDT", "tick_size": 0, "percentage": 0.3 },
+    { "symbol": "SOLUSDT", "tick_size": 0, "percentage": 0.4 }
   ],
   "black_list": [
-    { "symbol": "SOLUSDT", "tick_size": 0, "percentage": 0.4 },
-    { "symbol": "NEARUSDT", "tick_size": 0, "percentage": 0.4 },
-    { "symbol": "LINKUSDT", "tick_size": 0, "percentage": 0.4 },
     { "symbol": "LRCUSDT", "tick_size": 0, "percentage": 0.4 },
     { "symbol": "ADAUSDT", "tick_size": 0, "percentage": 0.4 },
     { "symbol": "BNBUSDT", "tick_size": 0, "percentage": 0.4 },

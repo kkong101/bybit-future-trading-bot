@@ -11,7 +11,7 @@ const {
   create_limit_order,
   close_one_position,
 } = require("../trade/order");
-const { set_isolated_mode } = require("../setInfo/index");
+const { checkNullish } = require("../utils/index");
 const COINS = require("../COINS.json");
 const TRADE = require("../TRADE.json");
 
@@ -20,10 +20,11 @@ module.exports = {
     const symbol_url = "/v2/public/symbols";
     const res = await getAxios(symbol_url);
 
-    if (res.ret_msg === "OK") {
+    if (res?.ret_msg === "OK") {
       for (const result of res.result) {
         if (COINS.white_list.find((bl) => bl.symbol == result.name)) {
           const current_price = await get_current_price(result.name);
+          if (checkNullish(current_price)) return;
 
           coin_info.push({
             symbol: result.name,
@@ -97,6 +98,7 @@ module.exports = {
     const res = await getAxios("/private/linear/position/list", {
       symbol: symbol,
     });
+    if (checkNullish(res)) return;
     if (res?.result && res.result.length != 0) {
       for (const position of res.result) {
         console.log("fkwefawfe", position);
@@ -173,6 +175,7 @@ module.exports = {
     const res = await getAxios("/private/linear/order/search", {
       symbol,
     });
+    if (checkNullish(res)) return;
     console.log(symbol, "kjewfkjbwef", res);
 
     if (res == null || res.result == undefined) return;

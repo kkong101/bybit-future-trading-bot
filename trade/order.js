@@ -6,7 +6,7 @@ const {
 } = require("../globalState/index");
 const { getTargetPrice } = require("../utils/index");
 const TRADE = require("../TRADE.json");
-const COINS = require("../COINS.json");
+const { checkNullish } = require("../utils/index");
 
 module.exports = {
   order_long_position: async (symbol, price, order_link_id) => {
@@ -64,6 +64,7 @@ module.exports = {
     };
 
     const res = await postAxios("/private/linear/order/create", params);
+    if (checkNullish(res)) return;
     return res;
   },
   order_short_position: async (symbol, price, order_link_id) => {
@@ -120,6 +121,7 @@ module.exports = {
       sl_trigger_by: "LastPrice",
     };
     const res = await postAxios("/private/linear/order/create", params);
+    if (checkNullish(res)) return;
     return res;
   },
   replace_order: async (symbol, price, idx, position) => {
@@ -205,6 +207,7 @@ module.exports = {
     };
 
     const res = await postAxios("/private/linear/order/replace", params);
+    if (checkNullish(res)) return;
 
     if (res?.ret_code == 0) {
       console.log(symbol, "## 가격 업데이트 성공 ###### position =>", position);
@@ -227,6 +230,7 @@ module.exports = {
 
   close_all_position: async () => {
     const res = await getAxios("/private/linear/position/list");
+    if (checkNullish(res)) return;
 
     const position_list = [];
     res.result.forEach((e) => {
@@ -251,6 +255,7 @@ module.exports = {
       };
 
       const res = await postAxios("/private/linear/order/create", params);
+      if (checkNullish(res)) return;
 
       if (res.rate_limit_status == "0") {
         // 만약 limit_rate가 전부다 한 상태라면,
@@ -259,7 +264,8 @@ module.exports = {
 
         const after_time = parseInt(res.rate_limit_reset_ms) - Date.now();
         setTimeout(async () => {
-          await postAxios("/private/linear/order/create", params);
+          const res = await postAxios("/private/linear/order/create", params);
+          if(checkNullish(res)) return;
 
           setTimeout(() => {
             trade.is_circuit_breaker = false;
@@ -274,6 +280,7 @@ module.exports = {
     const res = await getAxios("/private/linear/position/list", {
       symbol: symbol,
     });
+    if (checkNullish(res)) return;
 
     const qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
 
@@ -296,6 +303,8 @@ module.exports = {
 
       const res = await postAxios("/private/linear/order/create", params);
 
+      if (checkNullish(res)) return;
+
       console.log(symbol, "### position 정리 ! ", res);
 
       // 판매가 완료 되었으면,  on_position_coin_list 에서 빼줌 .
@@ -309,14 +318,15 @@ module.exports = {
         console.log("익절 / 손절해서 on_position_list에서 제외 해줌.");
       }
 
-      if (res.rate_limit_status == "0") {
+      if (res?.rate_limit_status == "0") {
         // 만약 limit_rate가 전부다 한 상태라면,
         trade.is_circuit_breaker = true;
         console.log("##### close_one_position breaker 발동");
 
-        const after_time = parseInt(res.rate_limit_reset_ms) - Date.now();
+        const after_time = parseInt(res?.rate_limit_reset_ms) - Date.now();
         setTimeout(async () => {
-          await postAxios("/private/linear/order/create", params);
+          const res = await postAxios("/private/linear/order/create", params);
+          if(checkNullish(res)) return;
 
           setTimeout(() => {
             trade.is_circuit_breaker = false;
@@ -336,6 +346,7 @@ module.exports = {
       interval: 1,
       from: Math.ceil(Date.now() / 1000 - 100),
     });
+    if (checkNullish(kline_res)) return;
     if (kline_res.ret_code == "10001")
       console.log("COINS에 코인 이름을 다시한번 확인해주세요.");
     const current_price = parseFloat(kline_res.result[0].close);
@@ -379,6 +390,8 @@ module.exports = {
         order_price.price,
         `create-short-limit-1-${Date.now()}`
       );
+
+      if (checkNullish(short_res2)) return;
 
       console.log(symbol, "short_res2", short_res2);
 
@@ -425,6 +438,8 @@ module.exports = {
         `create-long-limit-3-${Date.now()}`
       );
 
+      if (checkNullish(long_res1)) return;
+
       console.log(symbol, "long_res1", long_res1);
       if (long_res1 && long_res1.ret_msg == "OK") {
         coin_info[idx].order.push({
@@ -446,6 +461,8 @@ module.exports = {
         order_price.price,
         `create-long-limit-4-${Date.now()}`
       );
+
+      if (checkNullish(long_res2)) return;
 
       console.log(symbol, "long_res2", long_res2);
 
