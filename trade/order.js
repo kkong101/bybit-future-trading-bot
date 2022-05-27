@@ -167,43 +167,11 @@ module.exports = {
 
     if (order_id == null) return;
 
-    let precision_num = 0;
-    const stringed_number = price.toString();
-    if (stringed_number.split(".")[0].length != stringed_number.length) {
-      precision_num = stringed_number.split(".")[1].length;
-    }
-
-    let stop_loss = 0;
-    let take_profit = 0;
-
-    // Target Profit, Stop Loss(익절, 손절) 구하는 부분
-    if (side == "short") {
-      stop_loss =
-        order_price +
-        (order_price * TRADE.close_position.loss.loss_percentage) / 100;
-      take_profit =
-        order_price -
-        (order_price * TRADE.close_position.profit.profit_percentage) / 100;
-    } else {
-      // long인 경우,
-      stop_loss =
-        order_price -
-        (order_price * TRADE.close_position.loss.loss_percentage) / 100;
-      take_profit =
-        order_price +
-        (order_price * TRADE.close_position.profit.profit_percentage) / 100;
-    }
-
-    stop_loss = stop_loss.toFixed(precision_num);
-    take_profit = take_profit.toFixed(precision_num);
-
     const params = {
       symbol: symbol,
       order_id: order_id,
       p_r_price: order_price,
       p_r_qty: qty,
-      take_profit: take_profit,
-      stop_loss: stop_loss,
     };
 
     const res = await postAxios("/private/linear/order/replace", params);
@@ -211,7 +179,6 @@ module.exports = {
 
     if (res?.ret_code == 0) {
       console.log(symbol, "## 가격 업데이트 성공 ###### position =>", position);
-      console.log("take_profit => ", take_profit, "stop_loss => ", stop_loss);
       console.log("현재가 => ", price, "주문가 => ", order_price);
       console.log("## rate_limit", res.rate_limit_status, "###############");
       console.log("## rate_limit", res, "###############");
@@ -265,7 +232,7 @@ module.exports = {
         const after_time = parseInt(res.rate_limit_reset_ms) - Date.now();
         setTimeout(async () => {
           const res = await postAxios("/private/linear/order/create", params);
-          if(checkNullish(res)) return;
+          if (checkNullish(res)) return;
 
           setTimeout(() => {
             trade.is_circuit_breaker = false;
@@ -326,7 +293,7 @@ module.exports = {
         const after_time = parseInt(res?.rate_limit_reset_ms) - Date.now();
         setTimeout(async () => {
           const res = await postAxios("/private/linear/order/create", params);
-          if(checkNullish(res)) return;
+          if (checkNullish(res)) return;
 
           setTimeout(() => {
             trade.is_circuit_breaker = false;

@@ -128,13 +128,10 @@ const zzzz = (ttt) => {
 };
 
 const qwedq = async () => {
-  const req = {
+  const res = await getAxios("/private/linear/position/list", {
     symbol: "LTCUSDT",
-    side: "Buy",
-    take_profit: 62,
-    stop_loss: 61,
-  };
-  const res = await postAxios("/private/linear/position/trading-stop", req);
+  });
+
   console.log(res);
 };
 

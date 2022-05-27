@@ -139,6 +139,26 @@ module.exports = {
           );
           if (idx != -1) on_position_coin_list.splice(idx, 1);
         }
+
+        /**
+         * ######### TP/SL 세팅해주는 부분
+         */
+        if (
+          position.size != 0 &&
+          (position.stop_loss == 0 || position.take_profit == 0)
+        ) {
+          // TP/SL 가 설정되어 있지 않다면,
+          const thisModule = require("./index");
+          await thisModule.setTPandSL(
+            position.symbol,
+            position.side,
+            parseFloat(position.entry_price)
+          );
+          // !@#
+        }
+        /**
+         * ######## TP/SL 세팅해주는 부분 끝
+         */
       }
       /**
        * 교차인지 체크해서 만약 교차이면 isolated로 변경
@@ -299,8 +319,7 @@ module.exports = {
       coin_info[idx].order = hap;
     }
 
-    const position_list2 = coin_info[idx].order.map((e) => e.position);
-    const changed_ordered_list = position_list2.map((e) => e.position);
+    const changed_ordered_list = coin_info[idx].order.map((e) => e.position);
 
     // on_position_list에 1번 혹은 2번 거래가 없고, 2번만 걸려 있을 시 1번 거래 넣어줌.
     if (
@@ -446,20 +465,41 @@ module.exports = {
       coin_info.splice(idx, 1);
     }
   },
-  setTPandSL: async (symbol, side, price) => {
-    let take_profit = 0;
+  setTPandSL: async (symbol, side, order_price) => {
+    console.log("##### setTPandSL 실행", symbol, "###", order_price);
+    let precision_num = 0;
     let stop_loss = 0;
-    if (side == "Buy") {
-      take_profit =
-        price + (price * TRADE.close_position.profit.profit_percentage) / 100;
-      stop_loss =
-        price - (price * TRADE.close_position.loss.loss_percentage) / 100;
-    } else {
-      stop_loss =
-        price + (price * TRADE.close_position.profit.profit_percentage) / 100;
-      take_profit =
-        price - (price * TRADE.close_position.loss.loss_percentage) / 100;
+    let take_profit = 0;
+    const price = order_price;
+    const idx = coin_info.findIndex((e) => e.symbol == symbol);
+
+    const stringed_number = price.toString();
+    if (stringed_number.split(".")[0].length != stringed_number.length) {
+      precision_num = coin_info[idx].current_price
+        .toString()
+        .split(".")[1].length;
     }
+
+    // Target Profit, Stop Loss(익절, 손절) 구하는 부분
+    if (side == "Sell") {
+      stop_loss =
+        order_price +
+        (order_price * TRADE.close_position.loss.loss_percentage) / 100;
+      take_profit =
+        order_price -
+        (order_price * TRADE.close_position.profit.profit_percentage) / 100;
+    } else {
+      // long인 경우,
+      stop_loss =
+        order_price -
+        (order_price * TRADE.close_position.loss.loss_percentage) / 100;
+      take_profit =
+        order_price +
+        (order_price * TRADE.close_position.profit.profit_percentage) / 100;
+    }
+
+    stop_loss = stop_loss.toFixed(precision_num);
+    take_profit = take_profit.toFixed(precision_num);
     const req = {
       symbol: symbol,
       side: side,
@@ -467,6 +507,16 @@ module.exports = {
       stop_loss: stop_loss,
     };
     const res = await postAxios("/private/linear/position/trading-stop", req);
-    console.log(res);
+    if (res?.ret_code != 0) {
+      console.log("#### err /private/linear/position/trading-stop");
+      console.log(req);
+      console.log("#########");
+      console.log(res);
+      console.log("############");
+    } else {
+      console.log("###### setTPandSL 성공 ");
+      console.log(res);
+      console.log("##########");
+    }
   },
 };
