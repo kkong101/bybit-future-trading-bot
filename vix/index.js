@@ -54,9 +54,11 @@ module.exports = {
           ) {
             trade.leverage = e.leverage;
             trade.using_money_rate = e.using_money_rate;
+            trade.position_direction = e.trade_position;
             console.log("vixNum : ", vixNum);
             console.log("leverage : ", e.leverage);
             console.log("using_money_rate", e.using_money_rate);
+            console.log("trade_position", e.trade_position);
 
             // 잔고 업데이트 부분.
             await setBalance();

@@ -12,6 +12,7 @@ const {
   getCoinInfo,
   check_position_order,
   check_circuit_breaker,
+  checkPositionDirection,
 } = require("./setInfo/index");
 
 const API_KEY = SECRET.bybit.API_KEY;
@@ -38,10 +39,9 @@ const wsConfigUpdate = {
 // 시작했을 때 코인 정보 가져오는 부분
 
 const main = async () => {
+  await setVix();
   await cancelAll();
-  await setBalance();
   await getCoinInfo();
-  setVix();
 
   const wsUpdate = new WebsocketClient(wsConfigUpdate);
 
@@ -71,7 +71,7 @@ const main = async () => {
     setTimeout(() => {
       isReady = true;
     }, COINS.white_list.length * request_interval + 4000);
-  }, 5000);
+  }, 10000);
 
   /**
    * END ###

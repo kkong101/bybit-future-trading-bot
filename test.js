@@ -26,6 +26,7 @@ const {
   set_isolated_mode,
 } = require("./setInfo/index");
 const TRADE = require("./TRADE.json");
+const { cancel_one_side_limit_order } = require("./trade/deposit");
 
 const API_KEY = SECRET.bybit.API_KEY;
 const PRIVATE_KEY = SECRET.bybit.API_SECRET;
@@ -128,11 +129,7 @@ const zzzz = (ttt) => {
 };
 
 const qwedq = async () => {
-  const res = await getAxios("/private/linear/position/list", {
-    symbol: "LTCUSDT",
-  });
-
-  console.log(res);
+  await cancel_one_side_limit_order("LTCUSDT", "Buy");
 };
 
 qwedq();

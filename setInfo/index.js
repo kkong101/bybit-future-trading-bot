@@ -1,6 +1,6 @@
 const { coin_info, trade } = require("../globalState/index");
 const { getAxios, postAxios } = require("../axios/index");
-const { cancelAll } = require("../trade/deposit");
+const { cancelAll, cancel_one_side_limit_order } = require("../trade/deposit");
 const {
   circuit_breaker,
   on_position_coin_list,
@@ -216,6 +216,23 @@ module.exports = {
       }
     } else {
       coin_info[idx].order = [];
+    }
+
+    // long, short,both 상태 체크해서 주문 취소해줌.
+    if (trade.position_direction == "long") {
+      for (const order of coin_info[idx].order) {
+        if (order.position == 1 || order.position == 2) {
+          await cancel_one_side_limit_order(symbol, "Sell");
+          break;
+        }
+      }
+    } else if (trade.position_direction == "short") {
+      for (const order of coin_info[idx].order) {
+        if (order.position == 3 || order.position == 4) {
+          await cancel_one_side_limit_order(symbol, "Buy");
+          break;
+        }
+      }
     }
   },
   check_position_change: async (coinObject) => {
@@ -475,10 +492,12 @@ module.exports = {
     const idx = coin_info.findIndex((e) => e.symbol == symbol);
 
     const stringed_number = price.toString();
-    if (stringed_number.split(".")[0].length != stringed_number.length) {
-      precision_num = coin_info[idx].current_price
-        .toString()
-        .split(".")[1].length;
+    const splited_price = coin_info[idx].current_price.toString().split(".");
+    if (
+      stringed_number.split(".")[0].length != stringed_number.length &&
+      splited_price.length == 2
+    ) {
+      precision_num = splited_price[1].length;
     }
 
     // Target Profit, Stop Loss(익절, 손절) 구하는 부분

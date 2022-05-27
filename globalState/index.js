@@ -6,6 +6,7 @@ module.exports = {
     is_circuit_breaker: false,
     is_onPosition: false,
     is_onCreate_order: false,
+    position_direction: "both",
   },
   coin_info: [],
   /**

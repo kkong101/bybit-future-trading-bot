@@ -4,9 +4,8 @@ const {
   coin_info,
   on_position_coin_list,
 } = require("../globalState/index");
-const { getTargetPrice } = require("../utils/index");
+const { getTargetPrice, checkNullish } = require("../utils/index");
 const TRADE = require("../TRADE.json");
-const { checkNullish } = require("../utils/index");
 
 module.exports = {
   order_long_position: async (symbol, price, order_link_id) => {
@@ -327,6 +326,19 @@ module.exports = {
     const idx = coin_info.findIndex((e) => e.symbol == symbol);
     if (idx == -1) return;
     const current_price = await thisModule.get_current_price(symbol);
+
+    /**
+     * 롱 숏 both 조건 체크
+     */
+    if (trade.position_direction == "both") {
+    } else if (trade.position_direction == "short") {
+      order_position_list = order_position_list.filter((e) => e == 1 || e == 2);
+    } else if (trade.position_direction == "long") {
+      order_position_list = order_position_list.filter((e) => e == 3 || e == 4);
+    }
+    /**
+     * #### The end
+     */
 
     const order_price_list = [];
 
