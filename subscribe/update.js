@@ -32,7 +32,7 @@ module.exports = {
       await check_limit_order_list(symbol);
 
       // 1,2,3,4번 limit_order들 위치 체크
-      await check_position_change(symbol);
+      await check_position_change(coinObject);
     }
   },
 };

@@ -119,9 +119,23 @@ const test123 = async (symbol = "BTCUSDT") => {
   }
 };
 
+const zzzz = (ttt) => {
+  console.log(ttt, "ddd");
+  const test = ttt.find((e) => e.title === "tset");
+  const zzz = test.order.find((e) => e.id === "tsetset");
+
+  zzz.id = 1;
+};
+
 const qwedq = async () => {
-  console.log(new Date());
-  console.log(Date.now());
+  const req = {
+    symbol: "LTCUSDT",
+    side: "Buy",
+    take_profit: 62,
+    stop_loss: 61,
+  };
+  const res = await postAxios("/private/linear/position/trading-stop", req);
+  console.log(res);
 };
 
 qwedq();

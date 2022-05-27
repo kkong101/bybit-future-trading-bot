@@ -28,7 +28,7 @@
     "loss": {
       "loss_percentage": 1
     },
-    "close_position_time": 200
+    "close_position_time": 100
   },
   "order_interval": 3,
   "call_put_tick_size": 30,

@@ -176,7 +176,7 @@ module.exports = {
       symbol,
     });
     if (checkNullish(res)) return;
-    console.log(symbol, "kjewfkjbwef", res);
+    console.log(symbol, "check_limit_order_list()", res);
 
     if (res == null || res.result == undefined) return;
 
@@ -198,29 +198,22 @@ module.exports = {
       coin_info[idx].order = [];
     }
   },
-  check_position_change: async (symbol) => {
-    const coinObject = coin_info.find((coin) => coin.symbol == symbol);
+  check_position_change: async (coinObject) => {
     if (!coinObject) return;
 
+    const symbol = coinObject.symbol;
+    const idx = coin_info.findIndex((coin) => coin.symbol == symbol);
     // 없는 포지션 숫자를 찾아서 배열에 담음.
-    const absent_position_list = [];
+    let absent_position_list = [];
 
-    const position_list = coinObject.order.map((e) => e.position);
+    let position_list = coin_info[idx].order.map((e) => e.position);
     const full_position_list = [1, 2, 3, 4];
-
-    console.log(symbol, "### BEFORE position_list ", position_list);
 
     for (const position of full_position_list) {
       if (!position_list.includes(position)) {
         absent_position_list.push(position);
       }
     }
-
-    console.log(
-      symbol,
-      "### BEFORE absent_position_list",
-      absent_position_list
-    );
 
     if (absent_position_list.length == 0) return;
 
@@ -244,10 +237,30 @@ module.exports = {
       absent_position_list.includes(2) &&
       !absent_position_list.includes(1)
     ) {
-      // 만약 2의 포지션이 없을 경우에 =>
-      // 1을 2로 옮겨준다.
-      const orderObj = coinObject.order.find((e) => e.position == 1);
-      if (orderObj) orderObj.position = 2;
+      console.log("### POSITION 이동 했음 !!!");
+
+      let i = 0;
+      let hap = [...coin_info[idx].order];
+      for (const order of coin_info[idx].order) {
+        if (order.position == 1) {
+          hap[i].position = 2;
+          break;
+        }
+        i++;
+      }
+      // coin_info[idx].order[i].position = 3;
+      coin_info[idx].order = [];
+      coin_info[idx].order = hap;
+    }
+
+    absent_position_list = [];
+
+    position_list = coin_info[idx].order.map((e) => e.position);
+
+    for (const position of full_position_list) {
+      if (!position_list.includes(position)) {
+        absent_position_list.push(position);
+      }
     }
 
     if (absent_position_list.includes(3) && absent_position_list.includes(4)) {
@@ -270,18 +283,32 @@ module.exports = {
       absent_position_list.includes(3) &&
       !absent_position_list.includes(4)
     ) {
-      // 4을 3으로 옮겨준다.
-      const orderObj = coinObject.order.find((e) => e.position == 4);
-      if (orderObj) orderObj.position = 3;
+      console.log("### POSITION 이동 했음 !!!");
+      const idx = coin_info.findIndex((coin) => coin.symbol == symbol);
+      let i = 0;
+      let hap = [...coin_info[idx].order];
+      for (const order of coin_info[idx].order) {
+        if (order.position == 4) {
+          hap[i].position = 3;
+          break;
+        }
+        i++;
+      }
+      // coin_info[idx].order[i].position = 3;
+      coin_info[idx].order = [];
+      coin_info[idx].order = hap;
     }
+
+    const position_list2 = coin_info[idx].order.map((e) => e.position);
+    const changed_ordered_list = position_list2.map((e) => e.position);
 
     // on_position_list에 1번 혹은 2번 거래가 없고, 2번만 걸려 있을 시 1번 거래 넣어줌.
     if (
       !on_position_coin_list.find(
         (e) => e.symbol == symbol && e.side == "Sell"
       ) &&
-      !absent_position_list.includes(2) &&
-      absent_position_list.includes(1)
+      changed_ordered_list.includes(2) &&
+      !changed_ordered_list.includes(1)
     ) {
       console.log("#### 1번 position 주문 넣어줌");
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [1]);
@@ -292,18 +319,12 @@ module.exports = {
       !on_position_coin_list.find(
         (e) => e.symbol == symbol && e.side == "Buy"
       ) &&
-      !absent_position_list.includes(3) &&
-      absent_position_list.includes(4)
+      changed_ordered_list.includes(3) &&
+      !changed_ordered_list.includes(4)
     ) {
       console.log("#### 4번 position 주문 넣어줌");
       await create_limit_order(coinObject.symbol, coinObject.tick_size, [4]);
     }
-
-    console.log(
-      "#### AFTER on_position_coin_list",
-      symbol,
-      on_position_coin_list
-    );
   },
 
   check_position_order: async (symbol) => {
@@ -424,5 +445,28 @@ module.exports = {
     for (const idx of delete_idx_list) {
       coin_info.splice(idx, 1);
     }
+  },
+  setTPandSL: async (symbol, side, price) => {
+    let take_profit = 0;
+    let stop_loss = 0;
+    if (side == "Buy") {
+      take_profit =
+        price + (price * TRADE.close_position.profit.profit_percentage) / 100;
+      stop_loss =
+        price - (price * TRADE.close_position.loss.loss_percentage) / 100;
+    } else {
+      stop_loss =
+        price + (price * TRADE.close_position.profit.profit_percentage) / 100;
+      take_profit =
+        price - (price * TRADE.close_position.loss.loss_percentage) / 100;
+    }
+    const req = {
+      symbol: symbol,
+      side: side,
+      take_profit: take_profit,
+      stop_loss: stop_loss,
+    };
+    const res = await postAxios("/private/linear/position/trading-stop", req);
+    console.log(res);
   },
 };
