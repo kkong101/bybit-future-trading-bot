@@ -320,6 +320,7 @@ module.exports = {
     }
 
     const changed_ordered_list = coin_info[idx].order.map((e) => e.position);
+    if (changed_ordered_list.length == 4) return;
 
     // on_position_list에 1번 혹은 2번 거래가 없고, 2번만 걸려 있을 시 1번 거래 넣어줌.
     if (
