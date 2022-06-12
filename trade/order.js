@@ -11,7 +11,7 @@ module.exports = {
   order_long_position: async (symbol, price, order_link_id) => {
     // 얼마나 살건지 가격 측정하는 부분.
     const available_balance =
-      (trade.total_money * trade.using_money_rate) / (4 * coin_info.length);
+      (trade.total_money * trade.using_money_rate) / (2 * coin_info.length);
 
     const coinObject = coin_info.find((e) => e.symbol == symbol);
     if (!coinObject) return;
@@ -69,7 +69,7 @@ module.exports = {
   order_short_position: async (symbol, price, order_link_id) => {
     // 얼마나 살건지 가격 측정하는 부분.
     const available_balance =
-      (trade.total_money * trade.using_money_rate) / (4 * coin_info.length);
+      (trade.total_money * trade.using_money_rate) / (2 * coin_info.length);
 
     const coinObject = coin_info.find((e) => e.symbol == symbol);
     if (!coinObject) return;
@@ -128,7 +128,7 @@ module.exports = {
     if (!coinObject.order.find((e) => e.position == position)) return;
 
     const available_balance =
-      (trade.total_money * trade.using_money_rate) / (4 * coin_info.length);
+      (trade.total_money * trade.using_money_rate) / (2 * coin_info.length);
 
     // 얼마어치 살껀지 책정하는 부분
     const order_price = getTargetPrice(symbol, price, position);
@@ -242,7 +242,7 @@ module.exports = {
       return res;
     });
   },
-  close_one_position: async (symbol, side) => {
+  close_one_position_market: async (symbol, side) => {
     const res = await getAxios("/private/linear/position/list", {
       symbol: symbol,
     });
@@ -250,7 +250,7 @@ module.exports = {
 
     const qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
 
-    console.log(symbol, side, qty, "### close_one_position", res);
+    console.log(symbol, side, qty, "### close_one_position_market", res);
     console.log(on_position_coin_list);
     const positionObj = on_position_coin_list.find(
       (e) => e.symbol == symbol && e.side == side
@@ -287,7 +287,7 @@ module.exports = {
       if (res?.rate_limit_status == "0") {
         // 만약 limit_rate가 전부다 한 상태라면,
         trade.is_circuit_breaker = true;
-        console.log("##### close_one_position breaker 발동");
+        console.log("##### close_one_position_market breaker 발동");
 
         const after_time = parseInt(res?.rate_limit_reset_ms) - Date.now();
         setTimeout(async () => {
@@ -306,6 +306,43 @@ module.exports = {
       return;
     }
   },
+
+  close_one_position_limit: async (symbol, side) => {
+    const res = await getAxios("/private/linear/position/list", {
+      symbol: symbol,
+    });
+    if (checkNullish(res)) return;
+
+    const qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
+
+    console.log(symbol, side, qty, "### close_one_position_limit", res);
+    console.log(on_position_coin_list);
+    const positionObj = on_position_coin_list.find(
+      (e) => e.symbol == symbol && e.side == side
+    );
+
+    console.log("IMPORTANT !! ", positionObj);
+    const idx = coin_info.findIndex((e) => e.symbol == symbol);
+    if (positionObj) {
+      const params = {
+        symbol: symbol,
+        side: side == "Buy" ? "Sell" : "Buy",
+        order_type: "Limit",
+        price: coin_info[idx].current_price,
+        qty: qty,
+        reduce_only: true,
+        time_in_force: "ImmediateOrCancel",
+        close_on_trigger: false,
+      };
+
+      const res = await postAxios("/private/linear/order/create", params);
+
+      if (checkNullish(res)) return;
+
+      console.log(symbol, "### position 정리 ! ", res);
+    }
+  },
+
   get_current_price: async (symbol) => {
     const kline_res = await getAxios("/public/linear/kline", {
       symbol: symbol,
@@ -320,12 +357,11 @@ module.exports = {
     return current_price;
   },
   // limit_rate가 걸렸을경우 전부 대기시키고 1순위로 주문을 넣어줘야댐.
-  create_limit_order: async (symbol, tick_size, order_position_list) => {
+  create_limit_order: async (symbol, order_position_list) => {
     const thisModule = require("./order");
 
     const idx = coin_info.findIndex((e) => e.symbol == symbol);
     if (idx == -1) return;
-    const current_price = await thisModule.get_current_price(symbol);
 
     /**
      * 롱 숏 both 조건 체크
@@ -341,6 +377,7 @@ module.exports = {
      */
 
     const order_price_list = [];
+    const current_price = coin_info[idx].current_price;
 
     for (const position of order_position_list) {
       const target_price = getTargetPrice(symbol, current_price, position);

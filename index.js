@@ -62,8 +62,7 @@ const main = async () => {
         const coinObject = coin_info.find((ee) => ee.symbol == coin.symbol);
         if (!coinObject) return;
 
-        const tick_size = parseFloat(coinObject.tick_size);
-        await create_limit_order(coin.symbol, tick_size, [1, 2, 3, 4]);
+        await create_limit_order(coin.symbol, [2, 3]);
         coinObject.update_time = Date.now();
       }, idx * request_interval);
       idx++;
@@ -214,7 +213,7 @@ const main = async () => {
            * 403이 떠서 일단 이렇게....
            */
           const idx = coin_info.findIndex((e) => e.symbol == coin.symbol);
-          const full_position_list = [1, 2, 3, 4];
+          const full_position_list = [2, 3];
           let time = 100;
           for (const p of full_position_list) {
             setTimeout(async () => {
