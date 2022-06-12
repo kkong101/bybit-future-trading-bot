@@ -18,6 +18,7 @@ module.exports = {
           order_list.push(result.order_id);
         }
       }
+
       for (const order_id of order_list) {
         await postAxios("/private/linear/order/cancel", {
           symbol: cois.symbol,

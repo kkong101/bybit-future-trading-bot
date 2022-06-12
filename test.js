@@ -16,6 +16,8 @@ const {
   get_current_price,
 } = require("./trade/order");
 
+const fs = require("fs");
+
 const COINS = require("./COINS.json");
 
 const {
@@ -129,7 +131,36 @@ const zzzz = (ttt) => {
 };
 
 const qwedq = async () => {
-  await cancel_one_side_limit_order("LTCUSDT", "Buy");
+  // 한국 시간은 10시간 더 빠름.
+  const time_diff = 1000 * 60 * 60 * 10;
+  const test = new Date(1653715896000 + time_diff);
+
+  
+  console.log(test);
+  // const res = await getAxios("/private/linear/trade/closed-pnl/list", {
+  //   symbol: "LTCUSDT",
+  // });
+
+  // console.log(res);
+
+  // const historyList= [];
+
+  // if (res?.res_code == 0) {
+  //   for (const history of res.result.data) {
+  //     historyList.push({
+
+  //     })
+  //   }
+  // }
+
+  // console.log(res.result.data);
+  // const content = "Hello World";
+  // fs.writeFileSync("./result.txt", content, (err) => {
+  //   if (err) {
+  //     console.error(err);
+  //     return;
+  //   }
+  // });
 };
 
 qwedq();
