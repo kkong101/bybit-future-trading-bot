@@ -11,7 +11,7 @@ const { cancelAll, setBalance } = require("./trade/deposit");
 const { getAxios, postAxios } = require("./axios/index");
 const { setVix } = require("./vix/index");
 const {
-  close_one_position,
+  close_one_position_market,
   close_all_position,
   get_current_price,
 } = require("./trade/order");
@@ -131,36 +131,17 @@ const zzzz = (ttt) => {
 };
 
 const qwedq = async () => {
-  // 한국 시간은 10시간 더 빠름.
-  const time_diff = 1000 * 60 * 60 * 10;
-  const test = new Date(1653715896000 + time_diff);
-
-  
-  console.log(test);
-  // const res = await getAxios("/private/linear/trade/closed-pnl/list", {
-  //   symbol: "LTCUSDT",
-  // });
-
-  // console.log(res);
-
-  // const historyList= [];
-
-  // if (res?.res_code == 0) {
-  //   for (const history of res.result.data) {
-  //     historyList.push({
-
-  //     })
-  //   }
-  // }
-
-  // console.log(res.result.data);
-  // const content = "Hello World";
-  // fs.writeFileSync("./result.txt", content, (err) => {
-  //   if (err) {
-  //     console.error(err);
-  //     return;
-  //   }
-  // });
+  const res = await postAxios("/private/linear/order/create", {
+    symbol: "NEARUSDT",
+    side: "Sell",
+    order_type: "Limit",
+    price: 3.3,
+    qty: 3,
+    reduce_only: true,
+    time_in_force: "ImmediateOrCancel",
+    close_on_trigger: false,
+  });
+  console.log(res);
 };
 
 qwedq();
