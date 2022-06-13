@@ -4,7 +4,7 @@
       "range": "1~20",
       "leverage": 6.5,
       "using_money_rate": 0.7,
-      "trade_position": "long"
+      "trade_position": "both"
     },
     {
       "range": "20~50",
@@ -14,15 +14,15 @@
     },
     {
       "range": "50~55",
-      "leverage": 3,
+      "leverage": 6.5,
       "using_money_rate": 0.7,
       "trade_position": "both"
     },
     {
       "range": "55~100",
-      "leverage": 3,
+      "leverage": 6.5,
       "using_money_rate": 0.8,
-      "trade_position": "short"
+      "trade_position": "both"
     }
   ],
   "close_position": {

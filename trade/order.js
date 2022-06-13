@@ -248,6 +248,9 @@ module.exports = {
     });
     if (checkNullish(res)) return;
 
+    // 이미 매도가 되었다면 skip
+    if (res.result.length === 0) return;
+
     const qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
 
     console.log(symbol, side, qty, "### close_one_position_market", res);
@@ -311,7 +314,11 @@ module.exports = {
     const res = await getAxios("/private/linear/position/list", {
       symbol: symbol,
     });
-    if (checkNullish(res)) return;
+    // 판매 리스트에 이미 없다면 return
+    if (checkNullish(res) || res.result.length === 0) return;
+
+    console.log("#### /private/linear/position/list");
+    console.log(res);
 
     const qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
 

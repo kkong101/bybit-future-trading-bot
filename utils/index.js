@@ -80,6 +80,7 @@ module.exports = {
   checkNullish: (res) => {
     if (res == null || res == undefined) {
       console.log("##### err Null or undefined 발견");
+      console.log(res);
       return true;
     } else {
       return false;
