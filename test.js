@@ -131,17 +131,30 @@ const zzzz = (ttt) => {
 };
 
 const qwedq = async () => {
-  const res = await postAxios("/private/linear/order/create", {
+  const res = await postAxios("/private/linear/stop-order/create", {
     symbol: "NEARUSDT",
-    side: "Sell",
+    side: "Buy",
     order_type: "Limit",
-    price: 3.3,
+    price: 3.1, // ??
     qty: 3,
     reduce_only: true,
-    time_in_force: "ImmediateOrCancel",
+    time_in_force: "GoodTillCancel",
     close_on_trigger: false,
+    base_price: 3.21,
+    stop_px: 3.2, // 트리거 가격,
+    trigger_by: "LastPrice",
+    // order_link_id: "qwdqwqdwqwdqwd",
   });
   console.log(res);
+  // ##############
+  // const price = 3.27;
+  // const res2 = await postAxios("/private/linear/stop-order/replace", {
+  //   symbol: "NEARUSDT",
+  //   order_link_id: "test123",
+  //   p_r_price: price,
+  //   p_r_trigger_price: price,
+  // });
+  // console.log(res2);
 };
 
 qwedq();

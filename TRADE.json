@@ -32,7 +32,7 @@
     "loss": {
       "loss_percentage": 1
     },
-    "close_position_time": 100
+    "close_position_time": 600
   },
   "order_interval": 4,
   "call_put_tick_size": 30,
