@@ -8,7 +8,9 @@ module.exports = {
     console.log("api_url", api_url);
     console.log("####################################");
     const base_url = SECRET.mode == "test" ? SECRET.url.test : SECRET.url.live;
-    const now = Date.now().toString();
+    // const now = Date.now().toString();
+    const test = await axios.get(base_url + "/v2/public/time");
+    const now = parseInt(parseFloat(test.data.time_now) * 1000);
 
     // api_key&timestamp&sign 은 넣어줌
     const sign = getSignature({
@@ -46,8 +48,9 @@ module.exports = {
     console.log("####################################");
     const base_url = SECRET.mode == "test" ? SECRET.url.test : SECRET.url.live;
 
-    const timestamp = Date.now().toString();
-
+    // const timestamp = Date.now().toString();
+    const test = await axios.get(base_url + "/v2/public/time");
+    const timestamp = parseInt(parseFloat(test.data.time_now) * 1000);
     const params = {
       ...param,
       timestamp: timestamp,

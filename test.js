@@ -1,5 +1,6 @@
 const { WebsocketClient } = require("bybit-api");
 const SECRET = require("./SECRET.json");
+const axios = require("axios");
 const {
   circuit_breaker,
   trade,
@@ -131,30 +132,24 @@ const zzzz = (ttt) => {
 };
 
 const qwedq = async () => {
-  const res = await postAxios("/private/linear/stop-order/create", {
-    symbol: "NEARUSDT",
-    side: "Buy",
-    order_type: "Limit",
-    price: 3.1, // ??
-    qty: 3,
-    reduce_only: true,
-    time_in_force: "GoodTillCancel",
-    close_on_trigger: false,
-    base_price: 3.21,
-    stop_px: 3.2, // 트리거 가격,
-    trigger_by: "LastPrice",
-    // order_link_id: "qwdqwqdwqwdqwd",
-  });
-  console.log(res);
-  // ##############
-  // const price = 3.27;
-  // const res2 = await postAxios("/private/linear/stop-order/replace", {
+  // const res = await postAxios("/private/linear/stop-order/create", {
   //   symbol: "NEARUSDT",
-  //   order_link_id: "test123",
-  //   p_r_price: price,
-  //   p_r_trigger_price: price,
+  //   side: "Buy",
+  //   order_type: "Limit",
+  //   price: 3.1, // ??
+  //   qty: 3,
+  //   reduce_only: true,
+  //   time_in_force: "GoodTillCancel",
+  //   close_on_trigger: false,
+  //   base_price: 3.21,
+  //   stop_px: 3.2, // 트리거 가격,
+  //   trigger_by: "LastPrice",
+  //   // order_link_id: "qwdqwqdwqwdqwd",
   // });
-  // console.log(res2);
+  // console.log(res);
+  const res = await axios.get("https://api-testnet.bybit.com/v2/public/time")
+    .data.time_now;
+  console.log(res);
 };
 
 qwedq();

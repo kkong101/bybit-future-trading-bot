@@ -118,18 +118,19 @@ const main = async () => {
       console.log("trade.is_circuit_breaker", trade.is_circuit_breaker);
       console.log("on_position_coin_list", on_position_coin_list);
 
-      coin_info.forEach((coin) =>
-        console.log(coin.symbol, "coin_info.order ", coin.order)
-      );
-
-      console.log("queue", queue);
+      // ################### 성능 이슈상 제거 ###################
+      // coin_info.forEach((coin) =>
+      //   console.log(coin.symbol, "coin_info.order ", coin.order)
+      // );
+      // console.log("queue", queue);
+      // last_updated_time.forEach((e) => {
+      //   console.log(e.symbol, " =>  updated_time : ", Date.now() - e.updated);
+      // });
+      // ######################################
 
       if (trade.is_circuit_breaker || trade.is_onCreate_order) {
         return;
       }
-      last_updated_time.forEach((e) => {
-        console.log(e.symbol, " =>  updated_time : ", Date.now() - e.updated);
-      });
 
       for (const coin of last_updated_time) {
         if (Date.now() - coin.updated > 40000) {
