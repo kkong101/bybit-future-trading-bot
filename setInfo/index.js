@@ -271,16 +271,20 @@ module.exports = {
           "## 포지션 정리까지 남은 시간 ",
           Date.now() - position.time
         );
-        console.log(position.symbol, "## 청산 가격 => ", coinObj.liq_price);
+        console.log(position.symbol, "## 청산 가격 => ", position.liq_price);
         console.log(
-          "숏일경우 익절 가격 => ",
+          "## 숏일경우 익절 가격 => ",
           position.price -
-            position.price * TRADE.close_position.profit.profit_percentage
+            position.price *
+              TRADE.close_position.profit.profit_percentage *
+              0.01
         );
         console.log(
-          "롱일경우 익절 가격 => ",
+          "## 롱일경우 익절 가격 => ",
           position.price +
-            position.price * TRADE.close_position.profit.profit_percentage
+            position.price *
+              TRADE.close_position.profit.profit_percentage *
+              0.01
         );
         console.log(
           "### position 들어간 금액  => ",
@@ -293,12 +297,12 @@ module.exports = {
          */
 
         if (position.side == "Sell") {
-          if (coinObj.liq_price < current_price * 1.04) {
+          if (parseFloat(position.liq_price) < current_price * 1.04) {
             console.log("청산 방지를 위해 포지션을 모두 정리합니다. ######");
             await close_one_position_market(symbol, position.side);
           }
         } else {
-          if (coinObj.liq_price * 1.04 > current_price) {
+          if (parseFloat(position.liq_price) * 1.04 > current_price) {
             console.log("청산 방지를 위해 포지션을 모두 정리합니다. ######");
             await close_one_position_market(symbol, position.side);
           }
@@ -320,11 +324,14 @@ module.exports = {
             current_price <
               position.price -
                 position.price *
-                  TRADE.close_position.profit.profit_percentage) ||
+                  TRADE.close_position.profit.profit_percentage *
+                  0.01) ||
           (position.side == "Buy" &&
             current_price >
               position.price +
-                position.price * TRADE.close_position.profit.profit_percentage)
+                position.price *
+                  TRADE.close_position.profit.profit_percentage *
+                  0.01)
         ) {
           // 만약 롱과 숏이 설정해놓은 퍼샌테이지 이상의 익절 상태라면,
           console.log(

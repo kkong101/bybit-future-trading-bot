@@ -1,9 +1,9 @@
 {
   "white_list": [
     { "symbol": "LTCUSDT", "tick_size": 0, "percentage": 0.92 },
-    { "symbol": "NEARUSDT", "tick_size": 0, "percentage": 0.72 },
-    { "symbol": "LINKUSDT", "tick_size": 0, "percentage": 0.89 },
-    { "symbol": "SOLUSDT", "tick_size": 0, "percentage": 0.82 },
+    { "symbol": "NEARUSDT", "tick_size": 0, "percentage": 0.78 },
+    { "symbol": "LINKUSDT", "tick_size": 0, "percentage": 0.92 },
+    { "symbol": "SOLUSDT", "tick_size": 0, "percentage": 0.87 },
     { "symbol": "ATOMUSDT", "tick_size": 0, "percentage": 1.21 },
     { "symbol": "CROUSDT", "tick_size": 0, "percentage": 1.31 },
     { "symbol": "BNBUSDT", "tick_size": 0, "percentage": 1.2 },
@@ -11,9 +11,12 @@
     { "symbol": "MANAUSDT", "tick_size": 0, "percentage": 1.8 },
     { "symbol": "RUNEUSDT", "tick_size": 0, "percentage": 1.43 },
     { "symbol": "ADAUSDT", "tick_size": 0, "percentage": 1.39 },
-    { "symbol": "LRCUSDT", "tick_size": 0, "percentage": 1.1 },
-    { "symbol": "UNIUSDT", "tick_size": 0, "percentage": 1.1 },
-    { "symbol": "OMGUSDT", "tick_size": 0, "percentage": 1.8 }
+    { "symbol": "LRCUSDT", "tick_size": 0, "percentage": 1.2 },
+    { "symbol": "UNIUSDT", "tick_size": 0, "percentage": 1.2 },
+    { "symbol": "OMGUSDT", "tick_size": 0, "percentage": 1.8 },
+    { "symbol": "FTTUSDT", "tick_size": 0, "percentage": 1.1 },
+    { "symbol": "SANDUSDT", "tick_size": 0, "percentage": 1.16 },
+    { "symbol": "XRPUSDT", "tick_size": 0, "percentage": 1.12 }
   ],
   "black_list": [
     { "symbol": "LRCUSDT", "tick_size": 0, "percentage": 0.4 },

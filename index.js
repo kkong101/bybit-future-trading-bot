@@ -150,7 +150,7 @@ const main = async () => {
         if (queue.length == 0) return;
       }
     }, 1000);
-  }, COINS.white_list.length * request_interval + 4000);
+  }, COINS.white_list.length * request_interval + 8000);
   /**
    * THE END #######
    */
@@ -230,13 +230,9 @@ const main = async () => {
     /**
      * THE END #####
      */
-  }, COINS.white_list.length * request_interval + 8000);
+  }, COINS.white_list.length * request_interval + 9000);
   /**
    * THE END ###
-   */
-
-  /**
-   * 거래가 체결되면 order_id 다시한번 받아와서 정렬해줘야댐.... 헐..
    */
 
   // 에러 처리 해야되는 부분

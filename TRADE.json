@@ -27,14 +27,14 @@
   ],
   "close_position": {
     "profit": {
-      "profit_percentage": 0.7
+      "profit_percentage": 0.8
     },
     "loss": {
       "loss_percentage": 0.7
     },
-    "close_position_time": 720
+    "close_position_time": 900
   },
-  "order_interval": 3.5,
+  "order_interval": 4,
   "call_put_tick_size": 30,
   "circuit_breaker": {
     "time": 600,
