@@ -123,9 +123,24 @@ const main = async () => {
      */
     setInterval(async () => {
       if (!isReady) return;
-      console.log("trade.is_onCreate_order", trade.is_onCreate_order);
-      console.log("trade.is_circuit_breaker", trade.is_circuit_breaker);
-      console.log("on_position_coin_list", on_position_coin_list);
+      console.log(
+        SECRET.mode,
+        "#",
+        "trade.is_onCreate_order",
+        trade.is_onCreate_order
+      );
+      console.log(
+        SECRET.mode,
+        "#",
+        "trade.is_circuit_breaker",
+        trade.is_circuit_breaker
+      );
+      console.log(
+        SECRET.mode,
+        "#",
+        "on_position_coin_list",
+        on_position_coin_list
+      );
 
       // ################### 성능 이슈상 제거 ###################
       // coin_info.forEach((coin) =>
@@ -232,7 +247,12 @@ const main = async () => {
             time += 100;
           }
         } else {
-          console.log(coin.symbol, " => ####### 가격변동 없어서 break ######");
+          console.log(
+            SECRET.mode,
+            "#",
+            coin.symbol,
+            " => ####### 가격변동 없어서 break ######"
+          );
         }
       }
     }, TRADE.order_interval * 1000);

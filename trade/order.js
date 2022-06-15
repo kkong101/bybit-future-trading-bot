@@ -181,16 +181,23 @@ module.exports = {
       // console.log("현재가 => ", price, "주문가 => ", order_price);
       console.log("@@## rate_limit", res.rate_limit_status, "###############");
       // console.log("## rate_limit", res, "###############");
-      coin_info[idx].previous_price = order_price;
+      coin_info[idx].previous_price = price;
       coin_info[idx].update_time = Date.now();
       return true;
     } else {
       console.log(symbol, position, "##### REPLACE_ORDER 실패 #####");
       console.log("/private/linear/order/replace", res);
-      console.log("현재 가격 => ", price);
+      console.log("주문요청할때 코인 가격 => ", price);
+      console.log(
+        "coin_info[idx].previous_price",
+        coin_info[idx].previous_price
+      );
       console.log("####################################");
       console.log(params);
       console.log("####################################");
+      if (res && res.ret_code == "30076") {
+        coin_info[idx].previous_price = coin_info[idx].current_price;
+      }
     }
   },
 
