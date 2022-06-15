@@ -79,7 +79,7 @@ const main = async () => {
     setTimeout(() => {
       isReady = true;
     }, COINS.white_list.length * request_interval + 4000);
-  }, 10000);
+  }, 7000);
 
   /**
    * END ###
@@ -260,7 +260,7 @@ const main = async () => {
     /**
      * THE END #####
      */
-  }, COINS.white_list.length * request_interval + 9000);
+  }, COINS.white_list.length * request_interval + 11000);
   /**
    * THE END ###
    */

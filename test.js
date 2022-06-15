@@ -136,9 +136,10 @@ const zzzz = (ttt) => {
 };
 
 const qwedq = async () => {
-  const API =
-    SECRET.mode == "live" ? SECRET.bybit.API_KEY : SECRET.bybit_test.API_KEY;
-  console.log(API);
+  const res = await getAxios("/private/linear/order/search", {
+    symbol: "SANDUSDT",
+  });
+  console.log(res);
 };
 
 qwedq();

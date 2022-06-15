@@ -211,6 +211,7 @@ module.exports = {
           coin_info[idx].order.push({
             id: order.order_id,
             position: parseInt(position),
+            price: parseFloat(order.price),
           });
         }
       }

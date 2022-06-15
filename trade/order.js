@@ -124,6 +124,7 @@ module.exports = {
     return res;
   },
   replace_order: async (symbol, price, idx, position) => {
+    if (price == coin_info[idx].previous_price) return;
     const coinObject = coin_info[idx];
     if (!coinObject.order.find((e) => e.position == position)) return;
 
@@ -165,6 +166,16 @@ module.exports = {
     }
 
     if (order_id == null) return;
+
+    // 동일한 가격으로 수정 방지
+    for (const order of coin_info[idx].order) {
+      if (order.position == position) {
+        if (order.price == order_price) {
+          console.log("## replace_order 가격이 동일하여 skip");
+          return;
+        }
+      }
+    }
 
     const params = {
       symbol: symbol,
@@ -430,6 +441,7 @@ module.exports = {
         coin_info[idx].order.push({
           id: short_res2.result.order_id,
           position: 1,
+          price: parseFloat(order_price.price),
         });
         coin_info[idx].previous_price = order_price.price;
       } else {
@@ -446,12 +458,13 @@ module.exports = {
         order_price.price,
         `create-short-limit-2-${Date.now()}`
       );
-      console.log(symbol, "short_res1", short_res1);
+      // console.log(symbol, "short_res1", short_res1);
 
       if (short_res1 && short_res1.ret_msg == "OK") {
         coin_info[idx].order.push({
           id: short_res1.result.order_id,
           position: 2,
+          price: parseFloat(order_price.price),
         });
         coin_info[idx].previous_price = order_price.price;
       } else {
@@ -471,11 +484,12 @@ module.exports = {
 
       if (checkNullish(long_res1)) return;
 
-      console.log(symbol, "long_res1", long_res1);
+      // console.log(symbol, "long_res1", long_res1);
       if (long_res1 && long_res1.ret_msg == "OK") {
         coin_info[idx].order.push({
           id: long_res1.result.order_id,
           position: 3,
+          price: parseFloat(order_price.price),
         });
         coin_info[idx].previous_price = order_price.price;
       } else {
@@ -501,6 +515,7 @@ module.exports = {
         coin_info[idx].order.push({
           id: long_res2.result.order_id,
           position: 4,
+          price: parseFloat(order_price.price),
         });
         coin_info[idx].previous_price = order_price.price;
       } else {
