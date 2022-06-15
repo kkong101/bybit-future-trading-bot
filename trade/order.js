@@ -181,7 +181,7 @@ module.exports = {
       // console.log("현재가 => ", price, "주문가 => ", order_price);
       console.log("@@## rate_limit", res.rate_limit_status, "###############");
       // console.log("## rate_limit", res, "###############");
-      coin_info[idx].previous_price = price;
+      coin_info[idx].previous_price = order_price;
       coin_info[idx].update_time = Date.now();
       return true;
     } else {

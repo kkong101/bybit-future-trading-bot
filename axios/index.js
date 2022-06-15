@@ -11,17 +11,18 @@ module.exports = {
     const now = Date.now().toString();
     // const test = await axios.get(base_url + "/v2/public/time");
     // const now = parseInt(parseFloat(test.data.time_now) * 1000);
-
+    const API =
+      SECRET.mode == "live" ? SECRET.bybit.API_KEY : SECRET.bybit_test.API_KEY;
     // api_key&timestamp&sign 은 넣어줌
     const sign = getSignature({
       ...param,
-      api_key: SECRET.bybit.API_KEY,
+      api_key: API,
       timestamp: now,
     });
 
     param = {
       ...param,
-      api_key: SECRET.bybit.API_KEY,
+      api_key: API,
       sign: sign,
       timestamp: now,
     };
@@ -47,14 +48,15 @@ module.exports = {
     console.log("api_url", api_url);
     console.log("####################################");
     const base_url = SECRET.mode == "test" ? SECRET.url.test : SECRET.url.live;
-
+    const API =
+      SECRET.mode == "live" ? SECRET.bybit.API_KEY : SECRET.bybit_test.API_KEY;
     const timestamp = Date.now().toString();
     // const test = await axios.get(base_url + "/v2/public/time");
     // const timestamp = parseInt(parseFloat(test.data.time_now) * 1000);
     const params = {
       ...param,
       timestamp: timestamp,
-      api_key: SECRET.bybit.API_KEY,
+      api_key: API,
     };
 
     params["sign"] = getSignature(params);

@@ -31,8 +31,12 @@ const {
 const TRADE = require("./TRADE.json");
 const { cancel_one_side_limit_order } = require("./trade/deposit");
 
-const API_KEY = SECRET.bybit.API_KEY;
-const PRIVATE_KEY = SECRET.bybit.API_SECRET;
+const API_KEY =
+  SECRET.mode == "live" ? SECRET.bybit.API_KEY : SECRET.bybit_test.API_KEY;
+const PRIVATE_KEY =
+  SECRET.mode == "live"
+    ? SECRET.bybit.API_SECRET
+    : SECRET.bybit_test.API_SECRET;
 
 const wsConfig = {
   key: API_KEY,
@@ -132,24 +136,9 @@ const zzzz = (ttt) => {
 };
 
 const qwedq = async () => {
-  // const res = await postAxios("/private/linear/stop-order/create", {
-  //   symbol: "NEARUSDT",
-  //   side: "Buy",
-  //   order_type: "Limit",
-  //   price: 3.1, // ??
-  //   qty: 3,
-  //   reduce_only: true,
-  //   time_in_force: "GoodTillCancel",
-  //   close_on_trigger: false,
-  //   base_price: 3.21,
-  //   stop_px: 3.2, // 트리거 가격,
-  //   trigger_by: "LastPrice",
-  //   // order_link_id: "qwdqwqdwqwdqwd",
-  // });
-  // console.log(res);
-  const res = await axios.get("https://api-testnet.bybit.com/v2/public/time")
-    .data.time_now;
-  console.log(res);
+  const API =
+    SECRET.mode == "live" ? SECRET.bybit.API_KEY : SECRET.bybit_test.API_KEY;
+  console.log(API);
 };
 
 qwedq();

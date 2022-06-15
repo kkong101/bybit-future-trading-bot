@@ -15,7 +15,12 @@ module.exports = {
     orderedParams = orderedParams.substring(0, orderedParams.length - 1);
 
     return crypto
-      .createHmac("sha256", SECRET.bybit.API_SECRET)
+      .createHmac(
+        "sha256",
+        SECRET.mode == "live"
+          ? SECRET.bybit.API_SECRET
+          : SECRET.bybit_test.API_SECRET
+      )
       .update(orderedParams)
       .digest("hex");
   },
