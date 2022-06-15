@@ -158,7 +158,7 @@ module.exports = {
     }
 
     let order_id;
-    for (const order of coinObject.order) {
+    for (const order of coin_info[idx].order) {
       if (order.position == position) {
         order_id = order.id;
       }
@@ -177,10 +177,10 @@ module.exports = {
     if (checkNullish(res)) return;
 
     if (res?.ret_code == 0) {
-      console.log(symbol, "## 가격 업데이트 성공 ###### position =>", position);
-      console.log("현재가 => ", price, "주문가 => ", order_price);
-      console.log("## rate_limit", res.rate_limit_status, "###############");
-      console.log("## rate_limit", res, "###############");
+      // console.log(symbol, "## 가격 업데이트 성공 ###### position =>", position);
+      // console.log("현재가 => ", price, "주문가 => ", order_price);
+      console.log("@@## rate_limit", res.rate_limit_status, "###############");
+      // console.log("## rate_limit", res, "###############");
       coin_info[idx].previous_price = price;
       coin_info[idx].update_time = Date.now();
       return true;
@@ -315,10 +315,11 @@ module.exports = {
       symbol: symbol,
     });
     // 판매 리스트에 이미 없다면 return
-    if (checkNullish(res) || res.result.length === 0) return;
+    if (checkNullish(res)) return;
+    if (res.result.length === 0) return;
 
-    console.log("#### /private/linear/position/list");
-    console.log(res);
+    // console.log("#### /private/linear/position/list");
+    // console.log(res);
 
     const qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
 

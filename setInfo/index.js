@@ -196,7 +196,7 @@ module.exports = {
       symbol,
     });
     if (checkNullish(res)) return;
-    console.log(symbol, "check_limit_order_list()", res);
+    // console.log(symbol, "check_limit_order_list()", res);
 
     if (res == null || res.result == undefined) return;
 
@@ -318,7 +318,13 @@ module.exports = {
           // 해당하는 포지션 작업이 왔다면, 설정파일에 있는 시간를 체크함
           // 설정파일에서 설정한 시간이 지났다면 포지션 정리
           console.log(symbol, "### close_one_position_limit()로 전달  ");
-          await close_one_position_limit(symbol, position.side);
+          // 만약 포지션 정리할게 많다면 시장가로 정리
+          const on_position_length = on_position_coin_list.length;
+          if (on_position_length > 5) {
+            await close_one_position_market(symbol, position.side);
+          } else {
+            await close_one_position_limit(symbol, position.side);
+          }
         } else if (
           (position.side == "Sell" &&
             current_price <
@@ -336,9 +342,18 @@ module.exports = {
           // 만약 롱과 숏이 설정해놓은 퍼샌테이지 이상의 익절 상태라면,
           console.log(
             symbol,
-            "#### 익절/손절 로직에 의해 close_one_position_limit()에 전달"
+            "#### 익절/손절 로직작동",
+            position.side,
+            ",## 현재가:",
+            current_price
           );
-          await close_one_position_limit(symbol, position.side);
+          // 만약 포지션 정리할게 많다면 시장가로 정리
+          const on_position_length = on_position_coin_list.length;
+          if (on_position_length > 5) {
+            await close_one_position_market(symbol, position.side);
+          } else {
+            await close_one_position_limit(symbol, position.side);
+          }
         }
       }
     }
@@ -362,7 +377,7 @@ module.exports = {
     let total_coin_num = coin_info.length;
     for (const coin of coin_info) {
       const one_coin_available_balnce =
-        available_balance / (total_coin_num * 4);
+        available_balance / (total_coin_num * 2);
       const qty = one_coin_available_balnce / coin.current_price;
       if (qty < coin.min_trading_qty) {
         console.log("qty", qty, "coin.min_trading_qty", coin.min_trading_qty);

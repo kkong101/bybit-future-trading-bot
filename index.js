@@ -207,8 +207,8 @@ const main = async () => {
         // 같은 가격이면 요청 보내지 않음.tick_size
         await check_position_order(coin.symbol);
         if (
-          coin.previous_price > coin.current_price + coin.tick_size * 2 ||
-          coin.previous_price < coin.current_price - coin.tick_size * 2
+          coin.previous_price > coin.current_price + coin.tick_size * 10 ||
+          coin.previous_price < coin.current_price - coin.tick_size * 10
         ) {
           /**
            * 403이 떠서 일단 이렇게....
