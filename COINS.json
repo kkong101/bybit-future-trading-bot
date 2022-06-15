@@ -4,7 +4,6 @@
     { "symbol": "LINKUSDT", "tick_size": 0, "percentage": 1.09 },
     { "symbol": "CROUSDT", "tick_size": 0, "percentage": 1.31 },
     { "symbol": "BNBUSDT", "tick_size": 0, "percentage": 1.2 },
-    { "symbol": "ALGOUSDT", "tick_size": 0, "percentage": 1.39 },
     { "symbol": "ADAUSDT", "tick_size": 0, "percentage": 1.39 },
     { "symbol": "SANDUSDT", "tick_size": 0, "percentage": 1.16 },
     { "symbol": "XRPUSDT", "tick_size": 0, "percentage": 1.12 }
@@ -19,6 +18,7 @@
   ],
   "pendding": [
     { "symbol": "SOLUSDT", "tick_size": 0, "percentage": 0.87 },
-    { "symbol": "NEARUSDT", "tick_size": 0, "percentage": 0.84 }
+    { "symbol": "NEARUSDT", "tick_size": 0, "percentage": 0.84 },
+    { "symbol": "ALGOUSDT", "tick_size": 0, "percentage": 1.39 }
   ]
 }

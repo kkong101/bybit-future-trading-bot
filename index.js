@@ -209,7 +209,6 @@ const main = async () => {
       // 가격 변동이 없으면 return 시킴.
       if (direction_list.length == 0) return;
       const obj = direction_list[direction_list.length - 1];
-      console.log(" ### PRICE == > ", obj.price);
 
       const price = parseFloat(obj.price);
       const symbol = obj.symbol;
@@ -231,11 +230,13 @@ const main = async () => {
         // 같은 가격이면 요청 보내지 않음.tick_size
         await check_position_order(coin.symbol);
         if (
-          coin.previous_price > coin.current_price + coin.tick_size * 8 ||
-          coin.previous_price < coin.current_price - coin.tick_size * 8
+          coin.previous_price >
+            coin.current_price + coin.current_price * 0.01 * 0.09 ||
+          coin.previous_price <
+            coin.current_price - coin.current_price * 0.01 * 0.09
         ) {
           /**
-           * 403이 떠서 일단 이렇게....
+           * 403이 떠서 일단 이렇게.... 0.0003708
            */
           const idx = coin_info.findIndex((e) => e.symbol == coin.symbol);
           const full_position_list = [2, 3];
