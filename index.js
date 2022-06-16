@@ -260,7 +260,7 @@ const main = async () => {
     /**
      * THE END #####
      */
-  }, COINS.white_list.length * request_interval + 11000);
+  }, COINS.white_list.length * request_interval + 8400);
   /**
    * THE END ###
    */

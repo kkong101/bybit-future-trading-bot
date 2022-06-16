@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const SECRET = require("../SECRET.json");
 const COINS = require("../COINS.json");
+const TRADE = require("../TRADE.json");
 const { coin_info } = require("../globalState/index");
 
 module.exports = {
@@ -54,10 +55,13 @@ module.exports = {
           current_price + ((current_price * white_list.percentage) / 100) * 2;
       } else if (position == 2) {
         target_price =
-          current_price + (current_price * white_list.percentage) / 100;
+          current_price +
+          ((current_price * white_list.percentage) / 100) *
+            TRADE.direction.sell;
       } else if (position == 3) {
         target_price =
-          current_price - (current_price * white_list.percentage) / 100;
+          current_price -
+          ((current_price * white_list.percentage) / 100) * TRADE.direction.buy;
       } else if (position == 4) {
         target_price =
           current_price - ((current_price * white_list.percentage) / 100) * 2;

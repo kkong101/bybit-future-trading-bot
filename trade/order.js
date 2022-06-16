@@ -124,7 +124,6 @@ module.exports = {
     return res;
   },
   replace_order: async (symbol, price, idx, position) => {
-    if (price == coin_info[idx].previous_price) return;
     const coinObject = coin_info[idx];
     if (!coinObject.order.find((e) => e.position == position)) return;
 
@@ -139,6 +138,7 @@ module.exports = {
       side = "long";
     } else if (position == 4) {
       side = "long";
+    } else {
     }
 
     let qty = available_balance / price;
