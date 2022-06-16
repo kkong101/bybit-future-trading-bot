@@ -343,7 +343,36 @@ module.exports = {
           // 만약 롱과 숏이 설정해놓은 퍼샌테이지 이상의 익절 상태라면,
           console.log(
             symbol,
-            "#### 익절/손절 로직작동",
+            "#### 익절# 로직작동",
+            position.side,
+            ",## 현재가:",
+            current_price
+          );
+          // 만약 포지션 정리할게 많다면 시장가로 정리
+          const on_position_length = on_position_coin_list.length;
+          if (on_position_length > 5) {
+            await close_one_position_market(symbol, position.side);
+          } else {
+            await close_one_position_limit(symbol, position.side);
+          }
+        } else if (
+          (position.side == "Sell" &&
+            current_price >
+              position.price +
+                position.price *
+                  TRADE.close_position.loss.loss_percentage *
+                  0.01) ||
+          (position.side == "Buy" &&
+            current_price <
+              position.price -
+                position.price *
+                  TRADE.close_position.loss.loss_percentage *
+                  0.01)
+        ) {
+          // 만약 롱과 숏이 설정해놓은 퍼샌테이지 이상의 익절 상태라면,
+          console.log(
+            symbol,
+            "#### 손절# 로직작동",
             position.side,
             ",## 현재가:",
             current_price

@@ -3,10 +3,10 @@
     { "symbol": "LTCUSDT", "tick_size": 0, "percentage": 0.86 },
     { "symbol": "LINKUSDT", "tick_size": 0, "percentage": 0.91 },
     { "symbol": "CROUSDT", "tick_size": 0, "percentage": 1.21 },
-    { "symbol": "BNBUSDT", "tick_size": 0, "percentage": 1.17 },
+    { "symbol": "XCNUSDT", "tick_size": 0, "percentage": 1.82 },
     { "symbol": "UNFIUSDT", "tick_size": 0, "percentage": 1.24 },
     { "symbol": "SANDUSDT", "tick_size": 0, "percentage": 1.01 },
-    { "symbol": "LUNA2USDT", "tick_size": 0, "percentage": 1.1 }
+    { "symbol": "LUNA2USDT", "tick_size": 0, "percentage": 0.91 }
   ],
   "no_trade_list": [
     { "symbol": "ATOMUSDT", "tick_size": 0, "percentage": 1.21 },
@@ -20,6 +20,7 @@
     { "symbol": "SOLUSDT", "tick_size": 0, "percentage": 0.87 },
     { "symbol": "NEARUSDT", "tick_size": 0, "percentage": 0.84 },
     { "symbol": "ALGOUSDT", "tick_size": 0, "percentage": 1.39 },
-    { "symbol": "ADAUSDT", "tick_size": 0, "percentage": 1.24 }
+    { "symbol": "ADAUSDT", "tick_size": 0, "percentage": 1.24 },
+    { "symbol": "BNBUSDT", "tick_size": 0, "percentage": 1.17 }
   ]
 }

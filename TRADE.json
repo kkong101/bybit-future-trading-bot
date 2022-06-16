@@ -2,31 +2,31 @@
   "vix": [
     {
       "range": "1~20",
-      "leverage": 9.9,
+      "leverage": 11,
       "using_money_rate": 1,
       "trade_position": "both"
     },
     {
       "range": "20~50",
-      "leverage": 9.9,
+      "leverage": 11,
       "using_money_rate": 1,
       "trade_position": "both"
     },
     {
       "range": "50~55",
-      "leverage": 9.9,
+      "leverage": 11,
       "using_money_rate": 1,
       "trade_position": "both"
     },
     {
       "range": "55~100",
-      "leverage": 9.9,
+      "leverage": 11,
       "using_money_rate": 1,
       "trade_position": "both"
     }
   ],
   "direction": {
-    "sell": 0.95,
+    "sell": 1,
     "buy" : 1
   },
   "close_position": {
@@ -38,7 +38,7 @@
     },
     "close_position_time": 1500
   },
-  "order_interval": 6.5,
+  "order_interval": 7,
   "call_put_tick_size": 30,
   "circuit_breaker": {
     "time": 600,
