@@ -296,15 +296,19 @@ module.exports = {
         /**
          * 청산가격 방어 check 하는 부분
          */
-
+        console.log("### 청산가", position.liq_price, position.side);
         if (position.side == "Sell") {
-          if (parseFloat(position.liq_price) < current_price * 1.04) {
-            console.log("청산 방지를 위해 포지션을 모두 정리합니다. ######");
+          if (parseFloat(position.liq_price) < current_price * 1.05) {
+            console.log(
+              "정리] 청산 방지를 위해 포지션을 모두 정리합니다. ######"
+            );
             await close_one_position_market(symbol, position.side);
           }
-        } else {
-          if (parseFloat(position.liq_price) * 1.04 > current_price) {
-            console.log("청산 방지를 위해 포지션을 모두 정리합니다. ######");
+        } else if (position.side == "Buy") {
+          if (parseFloat(position.liq_price) * 1.05 > current_price) {
+            console.log(
+              "정리] 청산 방지를 위해 포지션을 모두 정리합니다. ######"
+            );
             await close_one_position_market(symbol, position.side);
           }
         }
@@ -318,7 +322,9 @@ module.exports = {
         ) {
           // 해당하는 포지션 작업이 왔다면, 설정파일에 있는 시간를 체크함
           // 설정파일에서 설정한 시간이 지났다면 포지션 정리
-          console.log(symbol, "### close_one_position_limit()로 전달  ");
+          console.log(symbol, "정리] #### 시간이 지나서 포지션 정리 진행");
+          await close_one_position_limit(symbol, position.side);
+          await close_one_position_limit(symbol, position.side);
           await close_one_position_market(symbol, position.side);
           // 만약 포지션 정리할게 많다면 시장가로 정리
           // const on_position_length = on_position_coin_list.length;
@@ -343,12 +349,15 @@ module.exports = {
         ) {
           // 만약 롱과 숏이 설정해놓은 퍼샌테이지 이상의 익절 상태라면,
           console.log(
+            "정리]",
             symbol,
             "#### 익절# 로직작동",
             position.side,
             ",## 현재가:",
             current_price
           );
+          await close_one_position_limit(symbol, position.side);
+          await close_one_position_limit(symbol, position.side);
           await close_one_position_market(symbol, position.side);
           // 만약 포지션 정리할게 많다면 시장가로 정리
           // const on_position_length = on_position_coin_list.length;
@@ -372,13 +381,7 @@ module.exports = {
                   0.01)
         ) {
           // 만약 롱과 숏이 설정해놓은 퍼샌테이지 이상의 익절 상태라면,
-          console.log(
-            symbol,
-            "#### 손절# 로직작동",
-            position.side,
-            ",## 현재가:",
-            current_price
-          );
+
           // 만약 체결된지 40초 이내라면 손절하지 않음.
           if (Date.now() - position.time < 40000) {
             console.log(
@@ -387,6 +390,16 @@ module.exports = {
             );
             return;
           }
+          console.log(
+            "정리]",
+            symbol,
+            "#### 손절# 로직작동",
+            position.side,
+            ",## 현재가:",
+            current_price
+          );
+          await close_one_position_limit(symbol, position.side);
+          await close_one_position_limit(symbol, position.side);
           await close_one_position_market(symbol, position.side);
           // const on_position_length = on_position_coin_list.length;
           // if (on_position_length > 5) {
@@ -414,6 +427,16 @@ module.exports = {
                     3) *
                     0.01)
           ) {
+            console.log(
+              "정리]",
+              symbol,
+              "#### 시간 제한 절반이 지나 약익절 진행",
+              position.side,
+              ",## 현재가:",
+              current_price
+            );
+            await close_one_position_limit(symbol, position.side);
+            await close_one_position_limit(symbol, position.side);
             await close_one_position_market(symbol, position.side);
             // 시간이 절반이 흘렀으면, 익절퍼샌테이지를 1/3줄인다.
             // const on_position_length = on_position_coin_list.length;

@@ -1,5 +1,9 @@
 {
-  "white_list": [{ "symbol": "XCNUSDT", "tick_size": 0, "percentage": 0.88 }],
+  "white_list": [
+    { "symbol": "LITUSDT", "tick_size": 0, "percentage": 1.48 },
+    { "symbol": "FITFIUSDT", "tick_size": 0, "percentage": 1.45 },
+    { "symbol": "LUNA2USDT", "tick_size": 0, "percentage": 1.2 }
+  ],
   "no_trade_list": [
     { "symbol": "ATOMUSDT", "tick_size": 0, "percentage": 1.21 },
     { "symbol": "RUNEUSDT", "tick_size": 0, "percentage": 1.33 },

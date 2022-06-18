@@ -216,9 +216,16 @@ const main = async () => {
       if (symbol == "BTCUSDT") {
         if (!trade.is_circuit_breaker) await check_circuit_breaker(price);
       }
-
       // 코인 가격 업데이트 해줌.
       if (idx != -1) coin_info[idx].current_price = price;
+
+      // ###### 가격이 변동되면 손절/익절 할건지 체크하는 부분
+      for (const coin of on_position_coin_list) {
+        if (coin.symbol == symbol) {
+          await check_position_order(coin.symbol);
+        }
+      }
+      // ##########################################
     });
 
     /**
@@ -230,9 +237,9 @@ const main = async () => {
         // 같은 가격이면 요청 보내지 않음.tick_size
         if (
           coin.previous_price >
-            coin.current_price + coin.current_price * 0.01 * 0.09 ||
+            coin.current_price + coin.current_price * 0.01 * 0.08 ||
           coin.previous_price <
-            coin.current_price - coin.current_price * 0.01 * 0.09
+            coin.current_price - coin.current_price * 0.01 * 0.08
         ) {
           /**
            * 403이 떠서 일단 이렇게.... 0.0003708
@@ -257,13 +264,15 @@ const main = async () => {
       }
     }, TRADE.order_interval * 1000);
 
-    //익절/손절 포지션 정리 체크하는 부분
+    // ## 익절/손절 체크하는 부분
     setInterval(async () => {
       if (on_position_coin_list.length === 0) return;
       for (const coin of on_position_coin_list) {
         await check_position_order(coin.symbol);
       }
-    }, 1000);
+    }, 2000);
+    // ## 익절/손절 체크하는 부분
+
     /**
      * THE END #####
      */

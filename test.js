@@ -167,7 +167,6 @@ const qwedq = async () => {
         interval: 1,
         from: server_time - (i + 1) * 60 * 200,
       });
-      console.log(res);
       list.push(...res.result);
     }
 

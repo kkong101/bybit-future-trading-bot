@@ -1,4 +1,5 @@
 const { getAxios } = require("./axios/index");
+const SECRET = require("./SECRET.json");
 
 const getKoreaTime = (ms) => {
   // ex ) 1655372640
@@ -11,6 +12,8 @@ function sleep(ms) {
 }
 
 const start = async () => {
+  SECRET.mode = "live";
+
   // 코인 정보 불러오는 부분
   const coin_res = await getAxios("/v2/public/symbols");
   let coin_list = [];
