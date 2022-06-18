@@ -23,14 +23,15 @@ const start = async () => {
   const time_res = await getAxios("/v2/public/time");
   const server_time = parseInt(time_res.time_now.substr(0, 10));
 
-  const hour = 30; // 30시간
+  const hour = 24; // 30시간
   let req_num = parseInt((hour * 60) / 200);
   if ((hour * 60) % 200 !== 0) {
     req_num++;
   }
-  const list = [];
+
   const result_list = [];
   for (const symbol of coin_list) {
+    const list = [];
     for (let i = 0; i < req_num; i++) {
       const res = await getAxios("/public/linear/kline", {
         symbol: symbol,
@@ -38,17 +39,23 @@ const start = async () => {
         from: server_time - (i + 1) * 60 * 200,
       });
       list.push(...res.result);
-      sleep(100);
+      sleep(50);
     }
-
-    const high_list = [];
+    const high_list_1percent = [];
+    const high_list_15percent = [];
     for (const tt of list) {
       const percentage =
         (Math.abs(parseFloat(tt.high) - parseFloat(tt.low)) /
           parseFloat(tt.high)) *
         100;
       if (percentage > 1) {
-        high_list.push({
+        high_list_1percent.push({
+          time: getKoreaTime(tt.start_at),
+          percentage: percentage,
+        });
+      }
+      if (percentage > 1.5) {
+        high_list_15percent.push({
           time: getKoreaTime(tt.start_at),
           percentage: percentage,
         });
@@ -56,14 +63,20 @@ const start = async () => {
     }
     result_list.push({
       symbol: symbol,
-      num: high_list.length,
+      num: high_list_1percent.length,
+      num2: high_list_15percent.length,
     });
   }
 
   result_list.sort((a, b) => {
     return b.num - a.num;
   });
-  console.log(result_list);
+  console.log(result_list.slice(1, 30));
+
+  result_list.sort((a, b) => {
+    return b.num2 - a.num2;
+  });
+  console.log(result_list.slice(1, 30));
 };
 
 start();
