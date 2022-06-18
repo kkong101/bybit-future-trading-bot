@@ -259,7 +259,7 @@ module.exports = {
       await create_limit_order(symbol, [2]);
     }
   },
-
+  // 포지션 정리할지 체크하는곳
   check_position_order: async (symbol) => {
     for (const position of on_position_coin_list) {
       if (position.symbol == symbol) {
@@ -267,31 +267,31 @@ module.exports = {
         if (!coinObj) return;
         const current_price = parseFloat(coinObj.current_price);
 
-        console.log(
-          position.symbol,
-          "## 포지션 정리까지 남은 시간 ",
-          Date.now() - position.time
-        );
-        console.log(position.symbol, "## 청산 가격 => ", position.liq_price);
-        console.log(
-          "## 숏일경우 익절 가격 => ",
-          position.price -
-            position.price *
-              TRADE.close_position.profit.profit_percentage *
-              0.01
-        );
-        console.log(
-          "## 롱일경우 익절 가격 => ",
-          position.price +
-            position.price *
-              TRADE.close_position.profit.profit_percentage *
-              0.01
-        );
-        console.log(
-          "### position 들어간 금액  => ",
-          position.price,
-          position.side
-        );
+        // console.log(
+        //   position.symbol,
+        //   "## 포지션 정리까지 남은 시간 ",
+        //   Date.now() - position.time
+        // );
+        // console.log(position.symbol, "## 청산 가격 => ", position.liq_price);
+        // console.log(
+        //   "## 숏일경우 익절 가격 => ",
+        //   position.price -
+        //     position.price *
+        //       TRADE.close_position.profit.profit_percentage *
+        //       0.01
+        // );
+        // console.log(
+        //   "## 롱일경우 익절 가격 => ",
+        //   position.price +
+        //     position.price *
+        //       TRADE.close_position.profit.profit_percentage *
+        //       0.01
+        // );
+        // console.log(
+        //   "### position 들어간 금액  => ",
+        //   position.price,
+        //   position.side
+        // );
 
         /**
          * 청산가격 방어 check 하는 부분
@@ -319,13 +319,14 @@ module.exports = {
           // 해당하는 포지션 작업이 왔다면, 설정파일에 있는 시간를 체크함
           // 설정파일에서 설정한 시간이 지났다면 포지션 정리
           console.log(symbol, "### close_one_position_limit()로 전달  ");
+          await close_one_position_market(symbol, position.side);
           // 만약 포지션 정리할게 많다면 시장가로 정리
-          const on_position_length = on_position_coin_list.length;
-          if (on_position_length > 5) {
-            await close_one_position_market(symbol, position.side);
-          } else {
-            await close_one_position_limit(symbol, position.side);
-          }
+          // const on_position_length = on_position_coin_list.length;
+          // if (on_position_length > 5) {
+          //   await close_one_position_market(symbol, position.side);
+          // } else {
+          //   await close_one_position_limit(symbol, position.side);
+          // }
         } else if (
           (position.side == "Sell" &&
             current_price <
@@ -348,13 +349,14 @@ module.exports = {
             ",## 현재가:",
             current_price
           );
+          await close_one_position_market(symbol, position.side);
           // 만약 포지션 정리할게 많다면 시장가로 정리
-          const on_position_length = on_position_coin_list.length;
-          if (on_position_length > 5) {
-            await close_one_position_market(symbol, position.side);
-          } else {
-            await close_one_position_limit(symbol, position.side);
-          }
+          // const on_position_length = on_position_coin_list.length;
+          // if (on_position_length > 5) {
+          //   await close_one_position_market(symbol, position.side);
+          // } else {
+          //   await close_one_position_limit(symbol, position.side);
+          // }
         } else if (
           (position.side == "Sell" &&
             current_price >
@@ -377,12 +379,48 @@ module.exports = {
             ",## 현재가:",
             current_price
           );
-          // 만약 포지션 정리할게 많다면 시장가로 정리
-          const on_position_length = on_position_coin_list.length;
-          if (on_position_length > 5) {
+          // 만약 체결된지 40초 이내라면 손절하지 않음.
+          if (Date.now() - position.time < 40000) {
+            console.log(
+              "Date.now() - position.time",
+              Date.now() - position.time
+            );
+            return;
+          }
+          await close_one_position_market(symbol, position.side);
+          // const on_position_length = on_position_coin_list.length;
+          // if (on_position_length > 5) {
+          //   await close_one_position_market(symbol, position.side);
+          // } else {
+          //   await close_one_position_limit(symbol, position.side);
+          // }
+        } else if (
+          Date.now() - position.time >
+          (TRADE.close_position.close_position_time * 1000) / 2
+        ) {
+          if (
+            (position.side == "Sell" &&
+              current_price <
+                position.price -
+                  ((position.price *
+                    TRADE.close_position.profit.profit_percentage) /
+                    3) *
+                    0.01) ||
+            (position.side == "Buy" &&
+              current_price >
+                position.price +
+                  ((position.price *
+                    TRADE.close_position.profit.profit_percentage) /
+                    3) *
+                    0.01)
+          ) {
             await close_one_position_market(symbol, position.side);
-          } else {
-            await close_one_position_limit(symbol, position.side);
+            // 시간이 절반이 흘렀으면, 익절퍼샌테이지를 1/3줄인다.
+            // const on_position_length = on_position_coin_list.length;
+            // if (on_position_length > 5) {
+            //   await close_one_position_market(symbol, position.side);
+            // } else {
+            //   await close_one_position_limit(symbol, position.side);
           }
         }
       }

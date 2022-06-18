@@ -123,24 +123,24 @@ const main = async () => {
      */
     setInterval(async () => {
       if (!isReady) return;
-      console.log(
-        SECRET.mode,
-        "#",
-        "trade.is_onCreate_order",
-        trade.is_onCreate_order
-      );
-      console.log(
-        SECRET.mode,
-        "#",
-        "trade.is_circuit_breaker",
-        trade.is_circuit_breaker
-      );
-      console.log(
-        SECRET.mode,
-        "#",
-        "on_position_coin_list",
-        on_position_coin_list
-      );
+      // console.log(
+      //   SECRET.mode,
+      //   "#",
+      //   "trade.is_onCreate_order",
+      //   trade.is_onCreate_order
+      // );
+      // console.log(
+      //   SECRET.mode,
+      //   "#",
+      //   "trade.is_circuit_breaker",
+      //   trade.is_circuit_breaker
+      // );
+      // console.log(
+      //   SECRET.mode,
+      //   "#",
+      //   "on_position_coin_list",
+      //   on_position_coin_list
+      // );
 
       // ################### 성능 이슈상 제거 ###################
       // coin_info.forEach((coin) =>
@@ -157,8 +157,8 @@ const main = async () => {
       }
 
       for (const coin of last_updated_time) {
-        if (Date.now() - coin.updated > 40000) {
-          console.log("check_send_order##### 작동");
+        if (Date.now() - coin.updated > 30000) {
+          // console.log("check_send_order##### 작동");
           await check_send_order(coin.symbol);
           coin.updated = Date.now();
         }
@@ -228,7 +228,6 @@ const main = async () => {
       // 포지션 정리할거 있는지 체크
       for (const coin of coin_info) {
         // 같은 가격이면 요청 보내지 않음.tick_size
-        await check_position_order(coin.symbol);
         if (
           coin.previous_price >
             coin.current_price + coin.current_price * 0.01 * 0.09 ||
@@ -257,6 +256,14 @@ const main = async () => {
         }
       }
     }, TRADE.order_interval * 1000);
+
+    //익절/손절 포지션 정리 체크하는 부분
+    setInterval(async () => {
+      if (on_position_coin_list.length === 0) return;
+      for (const coin of on_position_coin_list) {
+        await check_position_order(coin.symbol);
+      }
+    }, 1000);
     /**
      * THE END #####
      */

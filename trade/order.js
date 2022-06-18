@@ -289,7 +289,6 @@ module.exports = {
       };
 
       const res = await postAxios("/private/linear/order/create", params);
-
       if (checkNullish(res)) return;
 
       console.log(symbol, "### position 정리 ! ", res);
