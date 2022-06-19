@@ -133,14 +133,6 @@ module.exports = {
     // 얼마어치 살껀지 책정하는 부분
     const order_price = getTargetPrice(symbol, price, position);
 
-    let side = "short";
-    if (position == 3) {
-      side = "long";
-    } else if (position == 4) {
-      side = "long";
-    } else {
-    }
-
     let qty = available_balance / price;
 
     const remain = qty % coinObject.qty_step;
@@ -166,6 +158,24 @@ module.exports = {
     }
 
     if (order_id == null) return;
+    // #### 순간 장대 양봉/음봉 발현 => 체결 시 다시 되돌아 갈때 거래가 체결 되는걸 막아주는 로직
+    // for (const po of on_position_coin_list) {
+    //   // 만약 지정가 변경해주는 코인이 포지션에 있다면
+    //   if (po.symbol == symbol) {
+    //     const time_res = await getAxios("/v2/public/time");
+    //     const server_time = parseInt(time_res.time_now.substr(0, 10));
+
+    //     const res = await getAxios("/public/linear/kline", {
+    //       symbol: symbol,
+    //       interval: 1,
+    //       from: server_time - 120,
+    //     });
+
+    //     const coin_info = res.result[res.result.length - 1];
+    //   }
+    // }
+
+    // ############ THE END ###################
 
     // 동일한 가격으로 수정 방지
     for (const order of coin_info[idx].order) {

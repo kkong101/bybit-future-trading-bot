@@ -27,7 +27,7 @@
   ],
   "direction": {
     "sell": 1.1,
-    "buy" : 1
+    "buy": 1
   },
   "close_position": {
     "profit": {
