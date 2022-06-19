@@ -29,15 +29,6 @@
     "sell": 1.1,
     "buy": 1
   },
-  "close_position": {
-    "profit": {
-      "profit_percentage": 1.2
-    },
-    "loss": {
-      "loss_percentage": 1
-    },
-    "close_position_time": 1500
-  },
   "order_interval": 8,
   "call_put_tick_size": 30,
   "circuit_breaker": {

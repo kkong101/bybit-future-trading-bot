@@ -141,16 +141,8 @@ const getKoreaTime = (ms) => {
 };
 
 const qwedq = async () => {
-  const test = [
-    {
-      id: 2,
-      name: "kkong",
-    },
-  ];
-
-  const tt = test.find((e) => e.id === 2);
-  tt.name = "aaa";
-  console.log(test);
+  const time_res = await getAxios("/v2/public/time");
+  console.log(time_res);
 };
 
 qwedq();

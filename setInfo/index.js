@@ -265,33 +265,9 @@ module.exports = {
       if (position.symbol == symbol) {
         const coinObj = coin_info.find((e) => e.symbol == symbol);
         if (!coinObj) return;
+        // @@
+        const COIN_JSON_INFO = COINS.white_list.find((e) => e.symbol == symbol);
         const current_price = parseFloat(coinObj.current_price);
-
-        // console.log(
-        //   position.symbol,
-        //   "## 포지션 정리까지 남은 시간 ",
-        //   Date.now() - position.time
-        // );
-        // console.log(position.symbol, "## 청산 가격 => ", position.liq_price);
-        // console.log(
-        //   "## 숏일경우 익절 가격 => ",
-        //   position.price -
-        //     position.price *
-        //       TRADE.close_position.profit.profit_percentage *
-        //       0.01
-        // );
-        // console.log(
-        //   "## 롱일경우 익절 가격 => ",
-        //   position.price +
-        //     position.price *
-        //       TRADE.close_position.profit.profit_percentage *
-        //       0.01
-        // );
-        // console.log(
-        //   "### position 들어간 금액  => ",
-        //   position.price,
-        //   position.side
-        // );
 
         /**
          * 청산가격 방어 check 하는 부분
@@ -316,10 +292,7 @@ module.exports = {
         /**
          * THE END #################################
          */
-        if (
-          Date.now() - position.time >
-          TRADE.close_position.close_position_time * 1000
-        ) {
+        if (Date.now() - position.time > COIN_JSON_INFO.close_time * 1000) {
           // 해당하는 포지션 작업이 왔다면, 설정파일에 있는 시간를 체크함
           // 설정파일에서 설정한 시간이 지났다면 포지션 정리
           console.log(symbol, "정리] #### 시간이 지나서 포지션 정리 진행");
@@ -336,16 +309,10 @@ module.exports = {
         } else if (
           (position.side == "Sell" &&
             current_price <
-              position.price -
-                position.price *
-                  TRADE.close_position.profit.profit_percentage *
-                  0.01) ||
+              position.price - position.price * COIN_JSON_INFO.profit * 0.01) ||
           (position.side == "Buy" &&
             current_price >
-              position.price +
-                position.price *
-                  TRADE.close_position.profit.profit_percentage *
-                  0.01)
+              position.price + position.price * COIN_JSON_INFO.profit * 0.01)
         ) {
           // 만약 롱과 숏이 설정해놓은 퍼샌테이지 이상의 익절 상태라면,
           console.log(
@@ -369,16 +336,10 @@ module.exports = {
         } else if (
           (position.side == "Sell" &&
             current_price >
-              position.price +
-                position.price *
-                  TRADE.close_position.loss.loss_percentage *
-                  0.01) ||
+              position.price + position.price * COIN_JSON_INFO.loss * 0.01) ||
           (position.side == "Buy" &&
             current_price <
-              position.price -
-                position.price *
-                  TRADE.close_position.loss.loss_percentage *
-                  0.01)
+              position.price - position.price * COIN_JSON_INFO.loss * 0.01)
         ) {
           // 만약 롱과 숏이 설정해놓은 퍼샌테이지 이상의 익절 상태라면,
 
@@ -409,23 +370,17 @@ module.exports = {
           // }
         } else if (
           Date.now() - position.time >
-          (TRADE.close_position.close_position_time * 1000) / 2
+          (COIN_JSON_INFO.close_time * 1000) / 2
         ) {
           if (
             (position.side == "Sell" &&
               current_price <
                 position.price -
-                  ((position.price *
-                    TRADE.close_position.profit.profit_percentage) /
-                    3) *
-                    0.01) ||
+                  ((position.price * COIN_JSON_INFO.profit) / 3) * 0.01) ||
             (position.side == "Buy" &&
               current_price >
                 position.price +
-                  ((position.price *
-                    TRADE.close_position.profit.profit_percentage) /
-                    3) *
-                    0.01)
+                  ((position.price * COIN_JSON_INFO.profit) / 3) * 0.01)
           ) {
             console.log(
               "정리]",
@@ -493,6 +448,7 @@ module.exports = {
   },
   setTPandSL: async (symbol, side, order_price) => {
     console.log("##### setTPandSL 실행", symbol, "###", order_price);
+    const COIN_JSON_INFO = COINS.white_list.find((e) => e.symbol == symbol);
     let precision_num = 0;
     let stop_loss = 0;
     let take_profit = 0;
@@ -510,20 +466,12 @@ module.exports = {
 
     // Target Profit, Stop Loss(익절, 손절) 구하는 부분
     if (side == "Sell") {
-      stop_loss =
-        order_price +
-        (order_price * TRADE.close_position.loss.loss_percentage) / 100;
-      take_profit =
-        order_price -
-        (order_price * TRADE.close_position.profit.profit_percentage) / 100;
+      stop_loss = order_price + (order_price * COIN_JSON_INFO.loss) / 100;
+      take_profit = order_price - (order_price * COIN_JSON_INFO.profit) / 100;
     } else {
       // long인 경우,
-      stop_loss =
-        order_price -
-        (order_price * TRADE.close_position.loss.loss_percentage) / 100;
-      take_profit =
-        order_price +
-        (order_price * TRADE.close_position.profit.profit_percentage) / 100;
+      stop_loss = order_price - (order_price * COIN_JSON_INFO.loss) / 100;
+      take_profit = order_price + (order_price * COIN_JSON_INFO.profit) / 100;
     }
 
     stop_loss = stop_loss.toFixed(precision_num);

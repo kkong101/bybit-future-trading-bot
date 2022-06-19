@@ -4,7 +4,8 @@ const {
   coin_info,
   on_position_coin_list,
 } = require("../globalState/index");
-const { getTargetPrice, checkNullish } = require("../utils/index");
+const { checkNullish } = require("../utils/index");
+const COINS = require("../COINS.json");
 const TRADE = require("../TRADE.json");
 
 module.exports = {
@@ -15,6 +16,8 @@ module.exports = {
 
     const coinObject = coin_info.find((e) => e.symbol == symbol);
     if (!coinObject) return;
+
+    const COIN_JSON_INFO = COINS.white_list.find((e) => e.symbol == symbol);
 
     let qty = available_balance / price;
 
@@ -41,10 +44,8 @@ module.exports = {
     }
 
     // 청산가 정하는 부분 .
-    const stop_loss =
-      price - price * TRADE.close_position.loss.loss_percentage * 2;
-    const take_profit =
-      price + price * TRADE.close_position.profit.profit_percentage * 2;
+    const stop_loss = price - price * COIN_JSON_INFO.loss * 2;
+    const take_profit = price + price * COIN_JSON_INFO.profit * 2;
 
     const params = {
       side: "Buy",
@@ -74,6 +75,8 @@ module.exports = {
     const coinObject = coin_info.find((e) => e.symbol == symbol);
     if (!coinObject) return;
 
+    const COIN_JSON_INFO = COINS.white_list.find((e) => e.symbol == symbol);
+
     let qty = available_balance / price;
 
     const namo = qty % coinObject.qty_step;
@@ -100,10 +103,8 @@ module.exports = {
       precision_num = stringed_number.split(".")[1].length;
     }
 
-    const stop_loss =
-      price + price * TRADE.close_position.loss.loss_percentage * 2;
-    const take_profit =
-      price - price * TRADE.close_position.profit.profit_percentage * 2;
+    const stop_loss = price + price * COIN_JSON_INFO.loss * 2;
+    const take_profit = price - price * COIN_JSON_INFO.profit * 2;
     const params = {
       side: "Sell",
       symbol: symbol,
@@ -120,6 +121,7 @@ module.exports = {
       sl_trigger_by: "LastPrice",
     };
     const res = await postAxios("/private/linear/order/create", params);
+    console.log("qwdqwd", params);
     if (checkNullish(res)) return;
     return res;
   },
@@ -129,9 +131,6 @@ module.exports = {
 
     const available_balance =
       (trade.total_money * trade.using_money_rate) / (2 * coin_info.length);
-
-    // 얼마어치 살껀지 책정하는 부분
-    const order_price = getTargetPrice(symbol, price, position);
 
     let qty = available_balance / price;
 
@@ -158,24 +157,14 @@ module.exports = {
     }
 
     if (order_id == null) return;
-    // #### 순간 장대 양봉/음봉 발현 => 체결 시 다시 되돌아 갈때 거래가 체결 되는걸 막아주는 로직
-    // for (const po of on_position_coin_list) {
-    //   // 만약 지정가 변경해주는 코인이 포지션에 있다면
-    //   if (po.symbol == symbol) {
-    //     const time_res = await getAxios("/v2/public/time");
-    //     const server_time = parseInt(time_res.time_now.substr(0, 10));
 
-    //     const res = await getAxios("/public/linear/kline", {
-    //       symbol: symbol,
-    //       interval: 1,
-    //       from: server_time - 120,
-    //     });
-
-    //     const coin_info = res.result[res.result.length - 1];
-    //   }
-    // }
-
-    // ############ THE END ###################
+    // 얼마어치 살껀지 책정하는 부분
+    const thisModule = require("./order");
+    const order_price = await thisModule.getTargetPrice(
+      symbol,
+      price,
+      position
+    );
 
     // 동일한 가격으로 수정 방지
     for (const order of coin_info[idx].order) {
@@ -413,9 +402,12 @@ module.exports = {
 
     const order_price_list = [];
     const current_price = coin_info[idx].current_price;
-
     for (const position of order_position_list) {
-      const target_price = getTargetPrice(symbol, current_price, position);
+      const target_price = await thisModule.getTargetPrice(
+        symbol,
+        current_price,
+        position
+      );
       order_price_list.push({
         position: position,
         price: target_price,
@@ -477,7 +469,7 @@ module.exports = {
         });
         coin_info[idx].previous_price = order_price.price;
       } else {
-        console.log("short_res1 err!!!");
+        console.log("short_res1 err!!!", short_res1);
       }
     }
     if (
@@ -502,7 +494,7 @@ module.exports = {
         });
         coin_info[idx].previous_price = order_price.price;
       } else {
-        console.log("long_res1 err");
+        console.log("long_res1 err", long_res1);
       }
     }
     if (
@@ -531,5 +523,119 @@ module.exports = {
         console.log("long_res2 err");
       }
     }
+  },
+  getTargetPrice: async (symbol, current_price, position) => {
+    const coinObj = coin_info.find((e) => e.symbol == symbol);
+    if (!coinObj) return;
+    const white_list = COINS.white_list.find((e) => e.symbol == symbol);
+    const tick_size = coinObj.tick_size;
+
+    // #### 순간 장대 양봉/음봉 발현 => 체결 시 다시 되돌아 갈때 거래가 체결 되는걸 막아주는 로직
+
+    const time_res = await getAxios("/v2/public/time");
+    const server_time = parseInt(time_res.time_now.substr(0, 10));
+
+    const res = await getAxios("/public/linear/kline", {
+      symbol: symbol,
+      interval: 1,
+      from: server_time - 120,
+    });
+
+    const coin_info_res = res.result[res.result.length - 1];
+    let advantage_position = 1;
+    if (
+      (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low)) /
+        parseFloat(coin_info_res.high) >
+      white_list.percentage * 1.3
+    ) {
+      // 분봉의 저점 혹은 고점에서 반대 방향으로 가는 포지션 더 늘려주게
+      const position_percentage =
+        (current_price - parseFloat(coin_info_res.low)) /
+        (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low));
+      if (position == 2 && position_percentage < 0.25) {
+        // 숏일때, 저점 근처에서 limit_order를 수정한다면, 더 가격을 높게 수정해줘야댐.
+        //이건 아랫꼬리에서 가격을 업데이트 하는 경우임.
+        console.log("## 아래꼬리에서 포지션 변경 #####");
+        advantage_position = 1.5;
+      } else if (position == 3 && position_percentage > 0.75) {
+        // 롱일때,
+        console.log("## 위꼬리에서 포지션 변경 #####");
+        advantage_position = 1.5;
+      }
+    } else if (
+      (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low)) /
+        parseFloat(coin_info_res.high) >
+      white_list.percentage * 2
+    ) {
+      // 분봉의 저점 혹은 고점에서 반대 방향으로 가는 포지션 더 늘려주게
+      const position_percentage =
+        (current_price - parseFloat(coin_info_res.low)) /
+        (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low));
+      if (position == 2 && position_percentage < 0.5) {
+        // 숏일때, 저점 근처에서 limit_order를 수정한다면, 더 가격을 높게 수정해줘야댐.
+        //이건 아랫꼬리에서 가격을 업데이트 하는 경우임.
+        console.log("## 아래꼬리에서 포지션 변경 #####22");
+        advantage_position = 2;
+      } else if (position == 3 && position_percentage > 0.5) {
+        // 롱일때,
+        console.log("## 위꼬리에서 포지션 변경 #####22");
+        advantage_position = 2;
+      }
+    }
+    // ############ THE END ###################
+
+    let target_price = 0;
+
+    // 만약 tick으로 설정했다면,
+    if (white_list.percentage == 0) {
+      if (position == 1) {
+        target_price = current_price + tick_size * white_list.tick_size * 2;
+      } else if (position == 2) {
+        target_price = current_price + tick_size * white_list.tick_size;
+      } else if (position == 3) {
+        target_price = current_price - tick_size * white_list.tick_size;
+      } else if (position == 4) {
+        target_price = current_price - tick_size * white_list.tick_size * 2;
+      }
+    } else {
+      // 만약 퍼샌테이지로 설정했다면,
+      if (position == 1) {
+        target_price =
+          current_price + ((current_price * white_list.percentage) / 100) * 2;
+      } else if (position == 2) {
+        target_price =
+          current_price +
+          ((current_price * white_list.percentage) / 100) *
+            TRADE.direction.sell *
+            advantage_position;
+      } else if (position == 3) {
+        target_price =
+          current_price -
+          ((current_price * white_list.percentage) / 100) *
+            TRADE.direction.buy *
+            advantage_position;
+      } else if (position == 4) {
+        target_price =
+          current_price - ((current_price * white_list.percentage) / 100) * 2;
+      }
+    }
+
+    /**
+     * 소수점 자르는 로직
+     */
+    let precision_num = 0;
+    const stringed_number = tick_size.toString();
+    if (stringed_number.split(".")[0].length != stringed_number.length) {
+      precision_num = stringed_number.split(".")[1].length;
+    }
+
+    target_price = target_price - (target_price % tick_size);
+
+    target_price = parseFloat(target_price.toFixed(precision_num));
+
+    return target_price;
+    /**
+     * THE END ####
+     */
   },
 };
