@@ -172,7 +172,7 @@ module.exports = {
         if (order.price == order_price) {
           console.log("## replace_order 가격이 동일하여 skip11");
           return;
-        } else if (coin_info[idx].previous_price == order_price) {
+        } else if (coin_info[idx].previous_price == price) {
           console.log("## replace_order 가격이 동일하여 skip22");
           return;
         }
