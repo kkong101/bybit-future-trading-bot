@@ -170,7 +170,10 @@ module.exports = {
     for (const order of coin_info[idx].order) {
       if (order.position == position) {
         if (order.price == order_price) {
-          console.log("## replace_order 가격이 동일하여 skip");
+          console.log("## replace_order 가격이 동일하여 skip11");
+          return;
+        } else if (coin_info[idx].previous_price == order_price) {
+          console.log("## replace_order 가격이 동일하여 skip22");
           return;
         }
       }
@@ -531,9 +534,12 @@ module.exports = {
     const tick_size = coinObj.tick_size;
 
     // #### 순간 장대 양봉/음봉 발현 => 체결 시 다시 되돌아 갈때 거래가 체결 되는걸 막아주는 로직
+    let advantage_position = 1;
+    // const time_res = await getAxios("/v2/public/time");
 
-    const time_res = await getAxios("/v2/public/time");
-    const server_time = parseInt(time_res.time_now.substr(0, 10));
+    // const server_time = parseInt(time_res.time_now.substr(0, 10));
+
+    const server_time = parseInt(new Date().getTime() / 1000);
 
     const res = await getAxios("/public/linear/kline", {
       symbol: symbol,
@@ -541,45 +547,53 @@ module.exports = {
       from: server_time - 120,
     });
 
-    const coin_info_res = res.result[res.result.length - 1];
-    let advantage_position = 1;
-    if (
-      (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low)) /
-        parseFloat(coin_info_res.high) >
-      white_list.percentage * 1.3
-    ) {
-      // 분봉의 저점 혹은 고점에서 반대 방향으로 가는 포지션 더 늘려주게
-      const position_percentage =
-        (current_price - parseFloat(coin_info_res.low)) /
-        (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low));
-      if (position == 2 && position_percentage < 0.25) {
-        // 숏일때, 저점 근처에서 limit_order를 수정한다면, 더 가격을 높게 수정해줘야댐.
-        //이건 아랫꼬리에서 가격을 업데이트 하는 경우임.
-        console.log("## 아래꼬리에서 포지션 변경 #####");
-        advantage_position = 1.5;
-      } else if (position == 3 && position_percentage > 0.75) {
-        // 롱일때,
-        console.log("## 위꼬리에서 포지션 변경 #####");
-        advantage_position = 1.5;
-      }
-    } else if (
-      (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low)) /
-        parseFloat(coin_info_res.high) >
-      white_list.percentage * 2
-    ) {
-      // 분봉의 저점 혹은 고점에서 반대 방향으로 가는 포지션 더 늘려주게
-      const position_percentage =
-        (current_price - parseFloat(coin_info_res.low)) /
-        (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low));
-      if (position == 2 && position_percentage < 0.5) {
-        // 숏일때, 저점 근처에서 limit_order를 수정한다면, 더 가격을 높게 수정해줘야댐.
-        //이건 아랫꼬리에서 가격을 업데이트 하는 경우임.
-        console.log("## 아래꼬리에서 포지션 변경 #####22");
-        advantage_position = 2;
-      } else if (position == 3 && position_percentage > 0.5) {
-        // 롱일때,
-        console.log("## 위꼬리에서 포지션 변경 #####22");
-        advantage_position = 2;
+    if ((res != null || res != undefined) && res.result.length !== 0) {
+      const coin_info_res = res.result[res.result.length - 1];
+
+      if (
+        ((parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low)) /
+          parseFloat(coin_info_res.high)) *
+          100 >
+        white_list.percentage * 1.3
+      ) {
+        // 분봉의 저점 혹은 고점에서 반대 방향으로 가는 포지션 더 늘려주게
+
+        let position_percentage =
+          (parseFloat(coin_info_res.high) - current_price) /
+          (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low));
+        console.log(
+          "### 장대 음봉/양봉 발견 position_percentage =>",
+          position_percentage
+        );
+        if (position == 2 && position_percentage > 0.75) {
+          // 숏일때, 저점 근처에서 limit_order를 수정한다면, 더 가격을 높게 수정해줘야댐.
+          //이건 아랫꼬리에서 가격을 업데이트 하는 경우임.
+          console.log("## 아래꼬리에서 포지션 변경 #####");
+          advantage_position = 1.5;
+        } else if (position == 3 && position_percentage < 0.25) {
+          // 롱일때,
+          console.log("## 위꼬리에서 포지션 변경 #####");
+          advantage_position = 1.5;
+        }
+      } else if (
+        (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low)) /
+          parseFloat(coin_info_res.high) >
+        white_list.percentage * 2
+      ) {
+        // 분봉의 저점 혹은 고점에서 반대 방향으로 가는 포지션 더 늘려주게
+        let position_percentage =
+          (parseFloat(coin_info_res.high) - current_price) /
+          (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low));
+        if (position == 2 && position_percentage > 0.5) {
+          // 숏일때, 저점 근처에서 limit_order를 수정한다면, 더 가격을 높게 수정해줘야댐.
+          //이건 아랫꼬리에서 가격을 업데이트 하는 경우임.
+          console.log("## 아래꼬리에서 포지션 변경 #####22");
+          advantage_position = 2;
+        } else if (position == 3 && position_percentage < 0.5) {
+          // 롱일때,
+          console.log("## 위꼬리에서 포지션 변경 #####22");
+          advantage_position = 2;
+        }
       }
     }
     // ############ THE END ###################

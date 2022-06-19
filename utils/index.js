@@ -1,9 +1,5 @@
 const crypto = require("crypto");
 const SECRET = require("../SECRET.json");
-const COINS = require("../COINS.json");
-const TRADE = require("../TRADE.json");
-const { coin_info } = require("../globalState/index");
-const { getAxios } = require("../axios/index");
 
 module.exports = {
   getSignature: (param) => {

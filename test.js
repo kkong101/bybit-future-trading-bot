@@ -142,7 +142,8 @@ const getKoreaTime = (ms) => {
 
 const qwedq = async () => {
   const time_res = await getAxios("/v2/public/time");
-  console.log(time_res);
+  console.log(time_res.time_now);
+  console.log(new Date().getTime() / 1000);
 };
 
 qwedq();

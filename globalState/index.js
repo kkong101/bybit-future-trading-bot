@@ -54,4 +54,5 @@ module.exports = {
     btc_price: 0,
     signal_start_time: null,
   },
+  coin_kline_info: [],
 };
