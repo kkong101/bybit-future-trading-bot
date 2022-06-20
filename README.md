@@ -1,43 +1,55 @@
-# 바이비트를 이용한 자동매매 봇
+# Bybit Derivatives Trading Bot
 
-## 본 소스코드는 학습을 목적으로 제작하였기 때문에 사용 시 금전적 손실에 대한 책임을 지지 않습니다.😂
+## DISCLAIMER
+```
+This is just for practice to improve your coding skills. 
+You use it at your own risk.
+We don't have financial responsibility. 😂
+```
 
-## 1. 버전
+## How to work this bot
 
-| Version 1.0.0
-(2022.05.22) | - 기능
 
-1. 롱 2개 숏 2개의 지정가로 작동
-2. limit_order를 계속 추적하는 방식으로 beam 체결
-3. Vix, Circuit breaker(개선 필요)
-4. | 로그 전부 출력 (ctrl + f 한 뒤 “err” 검색 시 에러 추적 가능) |
-   | ------------------------------------------------------------ |
-   | Version 1.1.0 (예정)
-   (~2022.05.29) | - 추가 및 보완 기능
-5. TP/SL 개선
-6. 새로운 Circuit Breaker 방식 도입 |
 
-🚫 Version 2부터 Real-net 사용을 권장함…
 
-## 2. 설치 및 실행 방법
+## Usage
 
-[실행 Setting 방법](https://www.notion.so/Setting-1f06902257c946af90a3acf2b6908247)
+```
+npm install
+```
 
-## 3. Trading 설정값
+
+## Configuration
 
 - **`COINS.json`**
 
 ```json
-"white_list": [
-    { "symbol": "LTCUSDT", "tick_size": 0, "percentage": 0.3 },
-    { "symbol": "NEARUSDT", "tick_size": 50, "percentage": 0 },
-    { "symbol": "LINKUSDT", "tick_size": 0, "percentage": 0.3 }
+  "white_list": [
+    {
+      "symbol": "LITUSDT",
+      "tick_size": 0,
+      "percentage": 1.54,
+      "loss": 1.3,
+      "profit": 1.6,
+      "close_time": 1500
+    },
+    {
+      "symbol": "FITFIUSDT",
+      "tick_size": 0,
+      "percentage": 1.44,
+      "loss": 1.3,
+      "profit": 1.53,
+      "close_time": 1500
+    },
+    {
+      "symbol": "XCNUSDT",
+      "tick_size": 0,
+      "percentage": 2.1,
+      "loss": 1.5,
+      "profit": 1.7,
+      "close_time": 1500
+    }
   ],
-  "black_list": [
-    { "symbol": "SOLUSDT", "tick_size": 0, "percentage": 0.4 },
-    { "symbol": "NEARUSDT", "tick_size": 0, "percentage": 0.4 },
-    { "symbol": "LINKUSDT", "tick_size": 0, "percentage": 0.4 },
-    { "symbol": "LRCUSDT", "tick_size": 0, "percentage": 0.4 },
 ......
 ```
 
@@ -70,8 +82,8 @@
     }
   },
   "bybit": {
-    "API_KEY": "3r47vrP4MaiSj5Vtnp12",
-    "API_SECRET": "cketj83P58efwefwefOVSyxTTZ4Mk7gU0N"
+    "API_KEY": "3r47qwdvrP4MaiSj5Vtnp12",
+    "API_SECRET": "cketj83qwdP58efwefwefOVSyxTTZ4Mk7gU0N"
   }
 }
 ```
@@ -133,10 +145,3 @@
 }
 ```
 
-## 4. 버그 & 추가 기능 제보(ex)
-
-| 순서 | 종류      | 설명                                        | 중요도 | 진행도 |
-| ---- | --------- | ------------------------------------------- | ------ | ------ |
-| 1    | 버그      | 가격이 제대로 호출이 안됩니다.              | 상     | 0%     |
-| 2    | 기능 추가 | 추가적인 설정값을 넣고 싶습니다.            | 중     | 10%    |
-| 3    | 기능 개선 | Circuit breaker의 기능을 개선하고 싶습니다. | 하     | 30%    |
