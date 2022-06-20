@@ -6,6 +6,8 @@ This is just for practice to improve your coding skills.
 You use it at your own risk.
 We don't have financial responsibility. 😂
 ```
+### 🏝️ `All codes were written by kkong101`
+
 
 ## How to work this bot(strategy)
 
