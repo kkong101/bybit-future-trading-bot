@@ -1,6 +1,6 @@
 # Bybit Derivatives Trading Bot
 
-## DISCLAIMER
+## ⚠️ DISCLAIMER
 ```
 This is just for practice to improve your coding skills. 
 You use it at your own risk.
