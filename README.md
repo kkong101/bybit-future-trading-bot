@@ -9,6 +9,9 @@ We don't have financial responsibility. 😂
 
 ## How to work this bot
 
+This bot works in the futures trading. 
+Long and short positions are continuously held based on the current price every specific second, and a trade is concluded when the price fluctuates a lot. After that, this strategy of making a profit when the price was restored to the original price. 
+Additionally, the vix index of bitcoins is crawled from web, and multiple coins can be operated at the same time in this bot. Also, in order to minimize the number of bybit API requests(To avoid limit_rate), it is implemented so that requests are not sent when the price does not change. In addition, various functions have been implemented.
 
 
 
