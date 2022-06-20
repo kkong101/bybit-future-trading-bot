@@ -1,4 +1,4 @@
-# Bybit Derivatives Trading Bot
+# 📈 Bybit Derivatives Trading Bot  🏧
 
 ## ⚠️ DISCLAIMER
 ```
@@ -7,11 +7,19 @@ You use it at your own risk.
 We don't have financial responsibility. 😂
 ```
 
-## How to work this bot
+## How to work this bot(strategy)
 
 This bot works in the futures trading. 
 Long and short positions are continuously held based on the current price every specific second, and a trade is concluded when the price fluctuates a lot. After that, this strategy of making a profit when the price was restored to the original price. 
 Additionally, the vix index of bitcoins is crawled from web, and multiple coins can be operated at the same time in this bot. Also, in order to minimize the number of bybit API requests(To avoid limit_rate), it is implemented so that requests are not sent when the price does not change. In addition, various functions have been implemented.
+
+- You can configure available money rate depending on VIX index(VIX is crawled per min)
+- You can configure leverage depending on VIX index
+- You can configure how many seconds to send long or short replace limit order requests.
+- The current price of coins is get by Websocket
+- Transaction execution is also delivered though WebSocket.
+- You can set the target price, stop loss, and how long the position will be held for each coin.
+- You set set how many gaps from the current price to keep the limit order.(Percentage or Tick_size)
 
 
 
