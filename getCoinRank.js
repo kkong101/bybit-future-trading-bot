@@ -74,12 +74,12 @@ const start = async () => {
   result_list.sort((a, b) => {
     return b.num - a.num;
   });
-  console.log(result_list.slice(1, 30));
+  console.log(result_list.slice(1, 40));
 
   result_list.sort((a, b) => {
     return b.num2 - a.num2;
   });
-  console.log(result_list.slice(1, 30));
+  console.log(result_list.slice(1, 40));
 };
 
 start();

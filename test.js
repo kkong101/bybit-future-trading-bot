@@ -140,10 +140,81 @@ const getKoreaTime = (ms) => {
   return new Date(parseInt(ms) * 1000 + 9 * 60 * 60 * 1000);
 };
 
-const qwedq = async () => {
-  const time_res = await getAxios("/v2/public/time");
-  console.log(time_res.time_now);
-  console.log(new Date().getTime() / 1000);
+const getEMA = async () => {
+  const server_time = parseInt(new Date().getTime() / 1000);
+  let N = 30;
+  const res = await getAxios("/public/linear/kline", {
+    symbol: "UNFIUSDT",
+    interval: 1,
+    from: server_time - N * 60 * 2,
+  });
+
+  const k = 2 / (N + 1);
+
+  const priceList = res.result;
+
+  // 30EMA 부분
+
+  let sma = 0;
+  for (let i = 0; i < N; i++) {
+    sma += parseFloat(priceList[i].close);
+  }
+
+  sma /= N;
+
+  const startPrice = sma;
+  let current_ema_30 = 0;
+  let prev_ema = startPrice;
+
+  for (let i = N; i < priceList.length; i++) {
+    current_ema_30 = (parseFloat(priceList[i].close) - prev_ema) * k + prev_ema;
+    prev_ema = current_ema_30;
+  }
+
+  console.log("30 => ", current_ema_30);
+  // ###############
+
+  // 7EMA 부분
+  N = 7;
+  let sma7 = 0;
+  for (let i = priceList.length - 2 * N; i < priceList.length - N; i++) {
+    sma7 += parseFloat(priceList[i].close);
+  }
+
+  sma7 /= N;
+
+  const startPrice7 = sma7;
+  let current_ema = 0;
+  let prev_ema7 = startPrice7;
+
+  for (let i = priceList.length - N; i < priceList.length; i++) {
+    current_ema = (parseFloat(priceList[i].close) - prev_ema7) * k + prev_ema7;
+    prev_ema7 = current_ema;
+  }
+
+  // #################
+
+  console.log("7 => ", current_ema);
+  console.log("차이", current_ema_30 - current_ema);
+  return [current_ema, current_ema_30];
 };
 
-qwedq();
+const qdwjnq1 = async () => {
+  const EMA = require("technicalindicators").EMA;
+  let period = 30;
+  let values = [];
+  const server_time = parseInt(new Date().getTime() / 1000);
+  let N = 30;
+  const res = await getAxios("/public/linear/kline", {
+    symbol: "MANAUSDT",
+    interval: 1,
+    from: server_time - N * 60 * 3,
+  });
+  for (const e of res.result) {
+    values.push(parseFloat(e.close));
+  }
+  const result = EMA.calculate({ period: period, values: values });
+  console.log(result[result.length - 2]);
+};
+
+qdwjnq1();

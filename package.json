@@ -12,6 +12,7 @@
     "axios": "^0.26.1",
     "bybit-api": "^2.1.10",
     "crypto": "^1.0.1",
-    "puppeteer": "^13.5.2"
+    "puppeteer": "^13.5.2",
+    "technicalindicators": "^3.1.0"
   }
 }
