@@ -1,7 +1,7 @@
 {
   "white_list": [
     {
-      "symbol": "STORJUSDT",
+      "symbol": "AXSUSDT",
       "tick_size": 0,
       "percentage": 2,
       "loss": 2,

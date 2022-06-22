@@ -64,22 +64,23 @@ const main = async () => {
   /**
    * 최초 주문 넣어주는 부분
    */
-  setTimeout(async () => {
-    let idx = 1;
-    for (const coin of COINS.white_list) {
-      setTimeout(async () => {
-        const coinObject = coin_info.find((ee) => ee.symbol == coin.symbol);
-        if (!coinObject) return;
 
-        await create_limit_order(coin.symbol, [2, 3]);
-        coinObject.update_time = Date.now();
-      }, idx * request_interval);
-      idx++;
-    }
-    setTimeout(() => {
-      isReady = true;
-    }, COINS.white_list.length * request_interval + 4000);
-  }, 7000);
+  // setTimeout(async () => {
+  //   let idx = 1;
+  //   for (const coin of COINS.white_list) {
+  //     setTimeout(async () => {
+  //       const coinObject = coin_info.find((ee) => ee.symbol == coin.symbol);
+  //       if (!coinObject) return;
+
+  //       await create_limit_order(coin.symbol, [2, 3]);
+  //       coinObject.update_time = Date.now();
+  //     }, idx * request_interval);
+  //     idx++;
+  //   }
+  //   setTimeout(() => {
+  //     isReady = true;
+  //   }, COINS.white_list.length * request_interval + 4000);
+  // }, 7000);
 
   /**
    * END ###
@@ -123,34 +124,6 @@ const main = async () => {
      */
     setInterval(async () => {
       if (!isReady) return;
-      // console.log(
-      //   SECRET.mode,
-      //   "#",
-      //   "trade.is_onCreate_order",
-      //   trade.is_onCreate_order
-      // );
-      // console.log(
-      //   SECRET.mode,
-      //   "#",
-      //   "trade.is_circuit_breaker",
-      //   trade.is_circuit_breaker
-      // );
-      // console.log(
-      //   SECRET.mode,
-      //   "#",
-      //   "on_position_coin_list",
-      //   on_position_coin_list
-      // );
-
-      // ################### 성능 이슈상 제거 ###################
-      // coin_info.forEach((coin) =>
-      //   console.log(coin.symbol, "coin_info.order ", coin.order)
-      // );
-      // console.log("queue", queue);
-      // last_updated_time.forEach((e) => {
-      //   console.log(e.symbol, " =>  updated_time : ", Date.now() - e.updated);
-      // });
-      // ######################################
 
       if (trade.is_circuit_breaker || trade.is_onCreate_order) {
         return;

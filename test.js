@@ -200,21 +200,32 @@ const getEMA = async () => {
 };
 
 const qdwjnq1 = async () => {
-  const EMA = require("technicalindicators").EMA;
-  let period = 30;
-  let values = [];
-  const server_time = parseInt(new Date().getTime() / 1000);
-  let N = 30;
-  const res = await getAxios("/public/linear/kline", {
-    symbol: "MANAUSDT",
-    interval: 1,
-    from: server_time - N * 60 * 3,
-  });
-  for (const e of res.result) {
-    values.push(parseFloat(e.close));
-  }
-  const result = EMA.calculate({ period: period, values: values });
-  console.log(result[result.length - 2]);
+  let prev_min = 0;
+  setInterval(async () => {
+    if (new Date().getMinutes() === prev_min) {
+      console.log("시간 아직 안바뀌어서 pass");
+    } else {
+      const EMA = require("technicalindicators").EMA;
+      let period = 30;
+      let values = [];
+      const server_time = parseInt(new Date().getTime() / 1000);
+      let N = 30;
+      const res = await getAxios("/public/linear/kline", {
+        symbol: "MANAUSDT",
+        interval: 1,
+        from: server_time - 12000,
+      });
+      console.log(res.result.length);
+      for (const e of res.result) {
+        values.push(parseFloat(e.close));
+      }
+      const result_ema30 = EMA.calculate({ period: period, values: values });
+      console.log(result_ema30[result_ema30.length - 1]);
+      const result_ema7 = EMA.calculate({ period: 7, values: values });
+      console.log(result_ema7[result_ema7.length - 1]);
+      prev_min = new Date().getMinutes();
+    }
+  }, 3000);
 };
 
 qdwjnq1();
