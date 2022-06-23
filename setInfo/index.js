@@ -23,7 +23,8 @@ module.exports = {
 
     if (res?.ret_msg === "OK") {
       for (const result of res.result) {
-        if (COINS.white_list.find((bl) => bl.symbol == result.name)) {
+        const coinObj = COINS.white_list.find((bl) => bl.symbol == result.name);
+        if (coinObj) {
           const current_price = await get_current_price(result.name);
           if (checkNullish(current_price)) return;
 
@@ -35,6 +36,7 @@ module.exports = {
             qty_step: parseFloat(result.lot_size_filter.qty_step),
             previous_price: current_price,
             current_price: current_price,
+            profit_left_count: coinObj.profit_percentage.length,
             order: [],
           });
         }
@@ -113,9 +115,9 @@ module.exports = {
               // 구입 시간 갱신
               onPositionObj.time = Date.now();
               // 수량 갱신
-              onPositionObj.qty = position.size;
+              onPositionObj.qty = parseFloat(position.size);
               // 가격 갱신
-              onPositionObj.price = position.entry_price;
+              onPositionObj.price = parseFloat(position.entry_price);
 
               // 청산가 갱신
               onPositionObj.liq_price = parseFloat(position.liq_price);
@@ -125,8 +127,8 @@ module.exports = {
             on_position_coin_list.push({
               symbol: symbol,
               side: position.side,
-              price: position.entry_price,
-              qty: position.size,
+              price: parseFloat(position.entry_price),
+              qty: parseFloat(position.size),
               time: Date.now(),
               liq_price: parseFloat(position.liq_price),
             });
@@ -207,33 +209,16 @@ module.exports = {
           order.order_status == "New" ||
           order.order_status == "PartiallyFilled"
         ) {
-          const position = order.order_link_id.split("-")[3];
+          const position = order.order_link_id.split("-")[0];
           coin_info[idx].order.push({
             id: order.order_id,
-            position: parseInt(position),
+            position: position,
             price: parseFloat(order.price),
           });
         }
       }
     } else {
       coin_info[idx].order = [];
-    }
-
-    // long, short,both 상태 체크해서 주문 취소해줌.
-    if (trade.position_direction == "long") {
-      for (const order of coin_info[idx].order) {
-        if (order.position == 1 || order.position == 2) {
-          await cancel_one_side_limit_order(symbol, "Sell");
-          break;
-        }
-      }
-    } else if (trade.position_direction == "short") {
-      for (const order of coin_info[idx].order) {
-        if (order.position == 3 || order.position == 4) {
-          await cancel_one_side_limit_order(symbol, "Buy");
-          break;
-        }
-      }
     }
   },
   check_position_change: async (symbol) => {
@@ -260,146 +245,41 @@ module.exports = {
     }
   },
   // 포지션 정리할지 체크하는곳
-  check_position_order: async (symbol) => {
+  check_position_order: async (symbol, idx) => {
+    if (on_position_coin_list.length === 0) return;
     for (const position of on_position_coin_list) {
       if (position.symbol == symbol) {
-        const coinObj = coin_info.find((e) => e.symbol == symbol);
-        if (!coinObj) return;
-        // @@
-        const COIN_JSON_INFO = COINS.white_list.find((e) => e.symbol == symbol);
-        const current_price = parseFloat(coinObj.current_price);
-
-        /**
-         * 청산가격 방어 check 하는 부분
-         */
-        console.log("### 청산가", position.liq_price, position.side);
-        if (position.side == "Sell") {
-          if (parseFloat(position.liq_price) < current_price * 1.05) {
-            console.log(
-              "정리] 청산 방지를 위해 포지션을 모두 정리합니다. ######"
-            );
-            await close_one_position_market(symbol, position.side);
-          }
-        } else if (position.side == "Buy") {
-          if (parseFloat(position.liq_price) * 1.05 > current_price) {
-            console.log(
-              "정리] 청산 방지를 위해 포지션을 모두 정리합니다. ######"
-            );
-            await close_one_position_market(symbol, position.side);
-          }
+        let current_percentage;
+        if (position.side == "Buy") {
+          current_percentage =
+            ((coin_info[idx].current_price - position.price) /
+              coin_info[idx].current_price) *
+            100;
+        } else if (position.side == "Sell") {
+          current_percentage =
+            ((position.price - coin_info[idx].current_price) / position.price) *
+            100;
         }
 
-        /**
-         * THE END #################################
-         */
-        if (Date.now() - position.time > COIN_JSON_INFO.close_time * 1000) {
-          // 해당하는 포지션 작업이 왔다면, 설정파일에 있는 시간를 체크함
-          // 설정파일에서 설정한 시간이 지났다면 포지션 정리
-          console.log(symbol, "정리] #### 시간이 지나서 포지션 정리 진행");
-          await close_one_position_limit(symbol, position.side);
-          await close_one_position_limit(symbol, position.side);
-          await close_one_position_market(symbol, position.side);
-          // 만약 포지션 정리할게 많다면 시장가로 정리
-          // const on_position_length = on_position_coin_list.length;
-          // if (on_position_length > 5) {
-          //   await close_one_position_market(symbol, position.side);
-          // } else {
-          //   await close_one_position_limit(symbol, position.side);
-          // }
-        } else if (
-          (position.side == "Sell" &&
-            current_price <
-              position.price - position.price * COIN_JSON_INFO.profit * 0.01) ||
-          (position.side == "Buy" &&
-            current_price >
-              position.price + position.price * COIN_JSON_INFO.profit * 0.01)
-        ) {
-          // 만약 롱과 숏이 설정해놓은 퍼샌테이지 이상의 익절 상태라면,
-          console.log(
-            "정리]",
-            symbol,
-            "#### 익절# 로직작동",
-            position.side,
-            ",## 현재가:",
-            current_price
-          );
-          await close_one_position_limit(symbol, position.side);
-          await close_one_position_limit(symbol, position.side);
-          await close_one_position_market(symbol, position.side);
-          // 만약 포지션 정리할게 많다면 시장가로 정리
-          // const on_position_length = on_position_coin_list.length;
-          // if (on_position_length > 5) {
-          //   await close_one_position_market(symbol, position.side);
-          // } else {
-          //   await close_one_position_limit(symbol, position.side);
-          // }
-        } else if (
-          (position.side == "Sell" &&
-            current_price >
-              position.price + position.price * COIN_JSON_INFO.loss * 0.01) ||
-          (position.side == "Buy" &&
-            current_price <
-              position.price - position.price * COIN_JSON_INFO.loss * 0.01)
-        ) {
-          // 만약 롱과 숏이 설정해놓은 퍼샌테이지 이상의 익절 상태라면,
+        100;
+        // 익절 1~3차 까지 진행
+        const take_profit_list = COINS.white_list.profit_percentage;
 
-          // 만약 체결된지 40초 이내라면 손절하지 않음.
-          if (Date.now() - position.time < 40000) {
-            console.log(
-              "Date.now() - position.time",
-              Date.now() - position.time
-            );
-            return;
-          }
-          console.log(
-            "정리]",
-            symbol,
-            "#### 손절# 로직작동",
-            position.side,
-            ",## 현재가:",
-            current_price
-          );
-          await close_one_position_limit(symbol, position.side);
-          await close_one_position_limit(symbol, position.side);
-          await close_one_position_market(symbol, position.side);
-          // const on_position_length = on_position_coin_list.length;
-          // if (on_position_length > 5) {
-          //   await close_one_position_market(symbol, position.side);
-          // } else {
-          //   await close_one_position_limit(symbol, position.side);
-          // }
-        } else if (
-          Date.now() - position.time >
-          (COIN_JSON_INFO.close_time * 1000) / 2
+        if (
+          coin_info[idx].profit_left_count === 3 &&
+          take_profit_list[0] < current_percentage
         ) {
-          if (
-            (position.side == "Sell" &&
-              current_price <
-                position.price -
-                  ((position.price * COIN_JSON_INFO.profit) / 3) * 0.01) ||
-            (position.side == "Buy" &&
-              current_price >
-                position.price +
-                  ((position.price * COIN_JSON_INFO.profit) / 3) * 0.01)
-          ) {
-            console.log(
-              "정리]",
-              symbol,
-              "#### 시간 제한 절반이 지나 약익절 진행",
-              position.side,
-              ",## 현재가:",
-              current_price
-            );
-            await close_one_position_limit(symbol, position.side);
-            await close_one_position_limit(symbol, position.side);
-            await close_one_position_market(symbol, position.side);
-            // 시간이 절반이 흘렀으면, 익절퍼샌테이지를 1/3줄인다.
-            // const on_position_length = on_position_coin_list.length;
-            // if (on_position_length > 5) {
-            //   await close_one_position_market(symbol, position.side);
-            // } else {
-            //   await close_one_position_limit(symbol, position.side);
-          }
+          // 만약 1차 익절 조건에 충족한다면,
+        } else if (
+          coin_info[idx].profit_left_count === 2 &&
+          take_profit_list[1] < current_percentage
+        ) {
+        } else if (
+          coin_info[idx].profit_left_count === 1 &&
+          take_profit_list[2] < current_percentage
+        ) {
+        } else if (coin_info[idx].profit_left_count === 0) {
+          return;
         }
       }
     }

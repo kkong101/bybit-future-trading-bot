@@ -17,8 +17,6 @@ const {
   get_current_price,
 } = require("./trade/order");
 
-const fs = require("fs");
-
 const COINS = require("./COINS.json");
 
 const {
@@ -200,32 +198,30 @@ const getEMA = async () => {
 };
 
 const qdwjnq1 = async () => {
-  let prev_min = 0;
-  setInterval(async () => {
-    if (new Date().getMinutes() === prev_min) {
-      console.log("시간 아직 안바뀌어서 pass");
-    } else {
-      const EMA = require("technicalindicators").EMA;
-      let period = 30;
-      let values = [];
-      const server_time = parseInt(new Date().getTime() / 1000);
-      let N = 30;
-      const res = await getAxios("/public/linear/kline", {
-        symbol: "MANAUSDT",
-        interval: 1,
-        from: server_time - 12000,
-      });
-      console.log(res.result.length);
-      for (const e of res.result) {
-        values.push(parseFloat(e.close));
-      }
-      const result_ema30 = EMA.calculate({ period: period, values: values });
-      console.log(result_ema30[result_ema30.length - 1]);
-      const result_ema7 = EMA.calculate({ period: 7, values: values });
-      console.log(result_ema7[result_ema7.length - 1]);
-      prev_min = new Date().getMinutes();
-    }
-  }, 3000);
+  const MACD = require("technicalindicators").MACD;
+
+  const server_time = parseInt(new Date().getTime() / 1000);
+  const res = await getAxios("/public/linear/kline", {
+    symbol: "APEUSDT",
+    interval: 1,
+    from: server_time - 10000,
+  });
+  console.log(res.result[res.result.length - 1].close);
+  let values = [];
+  for (const e of res.result) {
+    values.push(parseFloat(e.close));
+  }
+  const macdInput = {
+    values: values,
+    fastPeriod: 5,
+    slowPeriod: 8,
+    signalPeriod: 5,
+    SimpleMAOscillator: false,
+    SimpleMASignal: false,
+  };
+
+  const kk = MACD.calculate(macdInput);
+  console.log(kk[kk.length - 1]);
 };
 
 qdwjnq1();

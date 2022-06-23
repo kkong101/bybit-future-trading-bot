@@ -9,13 +9,12 @@ const COINS = require("../COINS.json");
 const TRADE = require("../TRADE.json");
 
 module.exports = {
-  order_long_position: async (symbol, price, order_link_id) => {
+  order_long_position: async (symbol, price, order_link_id, idx) => {
     // 얼마나 살건지 가격 측정하는 부분.
     const available_balance =
-      (trade.total_money * trade.using_money_rate) / (2 * coin_info.length);
+      (trade.total_money * trade.using_money_rate) / coin_info.length;
 
-    const coinObject = coin_info.find((e) => e.symbol == symbol);
-    if (!coinObject) return;
+    const coinObject = coin_info[idx];
 
     const COIN_JSON_INFO = COINS.white_list.find((e) => e.symbol == symbol);
 
@@ -67,13 +66,12 @@ module.exports = {
     if (checkNullish(res)) return;
     return res;
   },
-  order_short_position: async (symbol, price, order_link_id) => {
+  order_short_position: async (symbol, price, order_link_id, idx) => {
     // 얼마나 살건지 가격 측정하는 부분.
     const available_balance =
-      (trade.total_money * trade.using_money_rate) / (2 * coin_info.length);
+      (trade.total_money * trade.using_money_rate) / coin_info.length;
 
-    const coinObject = coin_info.find((e) => e.symbol == symbol);
-    if (!coinObject) return;
+    const coinObject = coin_info[idx];
 
     const COIN_JSON_INFO = COINS.white_list.find((e) => e.symbol == symbol);
 
@@ -121,7 +119,6 @@ module.exports = {
       sl_trigger_by: "LastPrice",
     };
     const res = await postAxios("/private/linear/order/create", params);
-    console.log("qwdqwd", params);
     if (checkNullish(res)) return;
     return res;
   },
@@ -333,12 +330,11 @@ module.exports = {
     const res = await getAxios("/private/linear/position/list", {
       symbol: symbol,
     });
-    // 판매 리스트에 이미 없다면 return
+
     if (checkNullish(res)) return;
     if (res.result.length === 0) return;
 
-    // console.log("#### /private/linear/position/list");
-    // console.log(res);
+    const total_size = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
 
     const qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
 
@@ -383,39 +379,8 @@ module.exports = {
 
     return current_price;
   },
-  // limit_rate가 걸렸을경우 전부 대기시키고 1순위로 주문을 넣어줘야댐.
-  create_limit_order: async (symbol, order_position_list) => {
+  create_limit_order: async (symbol, position, price, idx) => {
     const thisModule = require("./order");
-
-    const idx = coin_info.findIndex((e) => e.symbol == symbol);
-    if (idx == -1) return;
-
-    /**
-     * 롱 숏 both 조건 체크
-     */
-    if (trade.position_direction == "both") {
-    } else if (trade.position_direction == "short") {
-      order_position_list = order_position_list.filter((e) => e == 1 || e == 2);
-    } else if (trade.position_direction == "long") {
-      order_position_list = order_position_list.filter((e) => e == 3 || e == 4);
-    }
-    /**
-     * #### The end
-     */
-
-    const order_price_list = [];
-    const current_price = coin_info[idx].current_price;
-    for (const position of order_position_list) {
-      const target_price = await thisModule.getTargetPrice(
-        symbol,
-        current_price,
-        position
-      );
-      order_price_list.push({
-        position: position,
-        price: target_price,
-      });
-    }
 
     for (const position_order of order_position_list) {
       // 이미 해당 포지션에 거래가 존재한다면 return 시킴.
@@ -424,6 +389,24 @@ module.exports = {
           return;
         }
       }
+    }
+
+    if (position === "Buy") {
+      const res = await thisModule.order_long_position(
+        symbol,
+        price,
+        `Buy-${Date.now()}`,
+        idx
+      );
+      console.log("### order_long_position", res);
+    } else if (position === "Sell") {
+      const res = await thisModule.order_short_position(
+        symbol,
+        price,
+        `Sell-${Date.now()}`,
+        idx
+      );
+      console.log("### order_short_position", res);
     }
 
     if (
@@ -527,112 +510,9 @@ module.exports = {
       }
     }
   },
-  getTargetPrice: async (symbol, current_price, position) => {
-    const coinObj = coin_info.find((e) => e.symbol == symbol);
-    if (!coinObj) return;
-    const white_list = COINS.white_list.find((e) => e.symbol == symbol);
-    const tick_size = coinObj.tick_size;
-
-    // #### 순간 장대 양봉/음봉 발현 => 체결 시 다시 되돌아 갈때 거래가 체결 되는걸 막아주는 로직
-    let advantage_position = 1;
-    // const time_res = await getAxios("/v2/public/time");
-
-    // const server_time = parseInt(time_res.time_now.substr(0, 10));
-
-    const server_time = parseInt(new Date().getTime() / 1000);
-
-    const res = await getAxios("/public/linear/kline", {
-      symbol: symbol,
-      interval: 1,
-      from: server_time - 120,
-    });
-
-    if ((res != null || res != undefined) && res.result.length !== 0) {
-      const coin_info_res = res.result[res.result.length - 1];
-
-      if (
-        ((parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low)) /
-          parseFloat(coin_info_res.high)) *
-          100 >
-        white_list.percentage * 1.3
-      ) {
-        // 분봉의 저점 혹은 고점에서 반대 방향으로 가는 포지션 더 늘려주게
-
-        let position_percentage =
-          (parseFloat(coin_info_res.high) - current_price) /
-          (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low));
-        console.log(
-          "### 장대 음봉/양봉 발견 position_percentage =>",
-          position_percentage
-        );
-        if (position == 2 && position_percentage > 0.75) {
-          // 숏일때, 저점 근처에서 limit_order를 수정한다면, 더 가격을 높게 수정해줘야댐.
-          //이건 아랫꼬리에서 가격을 업데이트 하는 경우임.
-          console.log("## 아래꼬리에서 포지션 변경 #####");
-          advantage_position = 1.5;
-        } else if (position == 3 && position_percentage < 0.25) {
-          // 롱일때,
-          console.log("## 위꼬리에서 포지션 변경 #####");
-          advantage_position = 1.5;
-        }
-      } else if (
-        (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low)) /
-          parseFloat(coin_info_res.high) >
-        white_list.percentage * 2
-      ) {
-        // 분봉의 저점 혹은 고점에서 반대 방향으로 가는 포지션 더 늘려주게
-        let position_percentage =
-          (parseFloat(coin_info_res.high) - current_price) /
-          (parseFloat(coin_info_res.high) - parseFloat(coin_info_res.low));
-        if (position == 2 && position_percentage > 0.5) {
-          // 숏일때, 저점 근처에서 limit_order를 수정한다면, 더 가격을 높게 수정해줘야댐.
-          //이건 아랫꼬리에서 가격을 업데이트 하는 경우임.
-          console.log("## 아래꼬리에서 포지션 변경 #####22");
-          advantage_position = 2;
-        } else if (position == 3 && position_percentage < 0.5) {
-          // 롱일때,
-          console.log("## 위꼬리에서 포지션 변경 #####22");
-          advantage_position = 2;
-        }
-      }
-    }
-    // ############ THE END ###################
-
-    let target_price = 0;
-
-    // 만약 tick으로 설정했다면,
-    if (white_list.percentage == 0) {
-      if (position == 1) {
-        target_price = current_price + tick_size * white_list.tick_size * 2;
-      } else if (position == 2) {
-        target_price = current_price + tick_size * white_list.tick_size;
-      } else if (position == 3) {
-        target_price = current_price - tick_size * white_list.tick_size;
-      } else if (position == 4) {
-        target_price = current_price - tick_size * white_list.tick_size * 2;
-      }
-    } else {
-      // 만약 퍼샌테이지로 설정했다면,
-      if (position == 1) {
-        target_price =
-          current_price + ((current_price * white_list.percentage) / 100) * 2;
-      } else if (position == 2) {
-        target_price =
-          current_price +
-          ((current_price * white_list.percentage) / 100) *
-            TRADE.direction.sell *
-            advantage_position;
-      } else if (position == 3) {
-        target_price =
-          current_price -
-          ((current_price * white_list.percentage) / 100) *
-            TRADE.direction.buy *
-            advantage_position;
-      } else if (position == 4) {
-        target_price =
-          current_price - ((current_price * white_list.percentage) / 100) * 2;
-      }
-    }
+  getTargetPrice: async (current_price, idx) => {
+    const tick_size = coin_info[idx].tick_size;
+    const target_price = current_price;
 
     /**
      * 소수점 자르는 로직

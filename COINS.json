@@ -2,11 +2,9 @@
   "white_list": [
     {
       "symbol": "AXSUSDT",
-      "tick_size": 0,
-      "percentage": 2,
-      "loss": 2,
-      "profit": 2,
-      "close_time": 1500
+      "profit_percentage": [0.46, 1.23, 2.22],
+      "limit_order_gap": 0.09,
+      "limit_order_signal": 0.1
     }
   ],
   "no_trade_list": [

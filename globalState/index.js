@@ -20,6 +20,13 @@ module.exports = {
       update_time: 153049039404
       previous_price: 0,
       current_price: 0,
+      prev_ema_30: 0.2344,
+      prev_ema_7: 0.234234,
+      curr_ema_30: 0.23443,
+      curr_ema_7: 0.23234,
+      ready_position: false,
+      profit_left_count: 3,
+      up_or_down: "up"
     }
    */
 
@@ -28,16 +35,12 @@ module.exports = {
    * order: [
         {
           id: "fnewejnf",
-          position: 1
+          position: "Buy"
         },
         {
           id: "fnewejnf",
-          position: 2
+          position: "Sell"
         },
-        {
-          id: "fnewejnf",
-          position: 3
-        }
    * ]
    */
 
