@@ -28,18 +28,14 @@ module.exports = {
       profit_left_count: 3,
       up_or_down: "up"
     }
-   */
-
-  /**
-   * 이렇게 변경 
    * order: [
         {
           id: "fnewejnf",
-          position: "Buy"
+          side: "Buy"
         },
         {
           id: "fnewejnf",
-          position: "Sell"
+          side: "Sell"
         },
    * ]
    */

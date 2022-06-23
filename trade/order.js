@@ -31,7 +31,7 @@ module.exports = {
     }
 
     let precision_num = 0;
-    const stringed_number = price.toString();
+    const stringed_number = coin_info[idx].current_price.toString();
     if (stringed_number.split(".")[0].length != stringed_number.length) {
       precision_num = stringed_number.split(".")[1].length;
     }
@@ -42,26 +42,20 @@ module.exports = {
       qty = qty - rest;
     }
 
-    // 청산가 정하는 부분 .
-    const stop_loss = price - price * COIN_JSON_INFO.loss * 2;
-    const take_profit = price + price * COIN_JSON_INFO.profit * 2;
-
     const params = {
       side: "Buy",
       symbol: symbol,
       order_type: "Limit",
       qty: qty,
-      price: price,
+      price: price.toFixed(precision_num),
       time_in_force: "GoodTillCancel",
       reduce_only: false,
       close_on_trigger: false,
       order_link_id: order_link_id,
-      take_profit: take_profit.toFixed(precision_num),
-      stop_loss: stop_loss.toFixed(precision_num),
       tp_trigger_by: "LastPrice",
       sl_trigger_by: "LastPrice",
     };
-
+    console.log(params);
     const res = await postAxios("/private/linear/order/create", params);
     if (checkNullish(res)) return;
     return res;
@@ -96,28 +90,25 @@ module.exports = {
     }
 
     let precision_num = 0;
-    const stringed_number = price.toString();
+    const stringed_number = coin_info[idx].current_price.toString();
     if (stringed_number.split(".")[0].length != stringed_number.length) {
       precision_num = stringed_number.split(".")[1].length;
     }
 
-    const stop_loss = price + price * COIN_JSON_INFO.loss * 2;
-    const take_profit = price - price * COIN_JSON_INFO.profit * 2;
     const params = {
       side: "Sell",
       symbol: symbol,
       order_type: "Limit",
       qty: qty,
-      price: price,
+      price: price.toFixed(precision_num),
       time_in_force: "GoodTillCancel",
       reduce_only: false,
       close_on_trigger: false,
       order_link_id: order_link_id,
-      take_profit: take_profit.toFixed(precision_num),
-      stop_loss: stop_loss.toFixed(precision_num),
       tp_trigger_by: "LastPrice",
       sl_trigger_by: "LastPrice",
     };
+    console.log(params);
     const res = await postAxios("/private/linear/order/create", params);
     if (checkNullish(res)) return;
     return res;
@@ -259,7 +250,7 @@ module.exports = {
       return res;
     });
   },
-  close_one_position_market: async (symbol, side) => {
+  close_one_position: async (symbol, qty_type, side, order_type, idx) => {
     const res = await getAxios("/private/linear/position/list", {
       symbol: symbol,
     });
@@ -268,7 +259,15 @@ module.exports = {
     // 이미 매도가 되었다면 skip
     if (res.result.length === 0) return;
 
-    const qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
+    let qty;
+
+    if (qty_type == "all") {
+      qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
+    } else if (qty_type == "1/3") {
+      const qty_step = coin_info[idx].qty_step;
+      const total_qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
+      qty = total_qty / 3 - ((total_qty / 3) % qty_step);
+    }
 
     console.log(symbol, side, qty, "### close_one_position_market", res);
     console.log(on_position_coin_list);
@@ -277,15 +276,27 @@ module.exports = {
     );
     console.log("IMPORTANT !! ", positionObj);
     if (positionObj) {
-      const params = {
+      let params = {
         symbol: symbol,
         side: side == "Buy" ? "Sell" : "Buy",
-        order_type: "Market",
+        order_type: order_type,
         qty: qty,
         reduce_only: true,
         time_in_force: "FillOrKill",
         close_on_trigger: false,
       };
+      if (order_type == "Limit") {
+        params = {
+          symbol: symbol,
+          price: coin_info[idx].current_price,
+          side: side == "Buy" ? "Sell" : "Buy",
+          order_type: order_type,
+          qty: qty,
+          reduce_only: true,
+          time_in_force: "FillOrKill",
+          close_on_trigger: false,
+        };
+      }
 
       const res = await postAxios("/private/linear/order/create", params);
       if (checkNullish(res)) return;
@@ -301,6 +312,13 @@ module.exports = {
         console.log("삭제된 idx, ", idx);
         on_position_coin_list.splice(idx, 1);
         console.log("익절 / 손절해서 on_position_list에서 제외 해줌.");
+        if (qty_type === "all") {
+          coin_info[idx].profit_left_count = 3;
+        } else {
+          coin_info[idx].profit_left_count =
+            coin_info[idx].profit_left_count - 1;
+        }
+        return true;
       }
 
       if (res?.rate_limit_status == "0") {
@@ -319,50 +337,10 @@ module.exports = {
         }, after_time + 500);
       }
 
-      return res;
+      return false;
     } else {
       console.log("발견 못해서 return !!! ", symbol);
       return;
-    }
-  },
-
-  close_one_position_limit: async (symbol, side) => {
-    const res = await getAxios("/private/linear/position/list", {
-      symbol: symbol,
-    });
-
-    if (checkNullish(res)) return;
-    if (res.result.length === 0) return;
-
-    const total_size = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
-
-    const qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
-
-    console.log(symbol, side, qty, "### close_one_position_limit", res);
-    console.log(on_position_coin_list);
-    const positionObj = on_position_coin_list.find(
-      (e) => e.symbol == symbol && e.side == side
-    );
-
-    console.log("IMPORTANT !! ", positionObj);
-    const idx = coin_info.findIndex((e) => e.symbol == symbol);
-    if (positionObj) {
-      const params = {
-        symbol: symbol,
-        side: side == "Buy" ? "Sell" : "Buy",
-        order_type: "Limit",
-        price: coin_info[idx].current_price,
-        qty: qty,
-        reduce_only: true,
-        time_in_force: "ImmediateOrCancel",
-        close_on_trigger: false,
-      };
-
-      const res = await postAxios("/private/linear/order/create", params);
-
-      if (checkNullish(res)) return;
-
-      console.log(symbol, "### position 정리 ! ", res);
     }
   },
 
@@ -382,10 +360,14 @@ module.exports = {
   create_limit_order: async (symbol, position, price, idx) => {
     const thisModule = require("./order");
 
-    for (const position_order of order_position_list) {
+    for (const position of on_position_coin_list) {
       // 이미 해당 포지션에 거래가 존재한다면 return 시킴.
       for (const my_order of coin_info[idx].order) {
-        if (position_order == my_order.position) {
+        if (
+          position.symbol == coin_info[idx].symbol &&
+          position.side == my_order.side
+        ) {
+          console.log("이미 주문 들어가서 pass");
           return;
         }
       }
@@ -407,107 +389,6 @@ module.exports = {
         idx
       );
       console.log("### order_short_position", res);
-    }
-
-    if (
-      order_position_list.includes(1) &&
-      !coin_info[idx].order.find((e) => e.position == 1)
-    ) {
-      order_price = order_price_list.find((e) => e.position == 1);
-      const short_res2 = await thisModule.order_short_position(
-        symbol,
-        order_price.price,
-        `create-short-limit-1-${Date.now()}`
-      );
-
-      if (checkNullish(short_res2)) return;
-
-      console.log(symbol, "short_res2", short_res2);
-
-      if (short_res2 && short_res2.ret_msg == "OK") {
-        coin_info[idx].order.push({
-          id: short_res2.result.order_id,
-          position: 1,
-          price: parseFloat(order_price.price),
-        });
-        coin_info[idx].previous_price = order_price.price;
-      } else {
-        console.log("short_res2 err !!!!!");
-      }
-    }
-    if (
-      order_position_list.includes(2) &&
-      !coin_info[idx].order.find((e) => e.position == 2)
-    ) {
-      order_price = order_price_list.find((e) => e.position == 2);
-      const short_res1 = await thisModule.order_short_position(
-        symbol,
-        order_price.price,
-        `create-short-limit-2-${Date.now()}`
-      );
-      // console.log(symbol, "short_res1", short_res1);
-
-      if (short_res1 && short_res1.ret_msg == "OK") {
-        coin_info[idx].order.push({
-          id: short_res1.result.order_id,
-          position: 2,
-          price: parseFloat(order_price.price),
-        });
-        coin_info[idx].previous_price = order_price.price;
-      } else {
-        console.log("short_res1 err!!!", short_res1);
-      }
-    }
-    if (
-      order_position_list.includes(3) &&
-      !coin_info[idx].order.find((e) => e.position == 3)
-    ) {
-      order_price = order_price_list.find((e) => e.position == 3);
-      const long_res1 = await thisModule.order_long_position(
-        symbol,
-        order_price.price,
-        `create-long-limit-3-${Date.now()}`
-      );
-
-      if (checkNullish(long_res1)) return;
-
-      // console.log(symbol, "long_res1", long_res1);
-      if (long_res1 && long_res1.ret_msg == "OK") {
-        coin_info[idx].order.push({
-          id: long_res1.result.order_id,
-          position: 3,
-          price: parseFloat(order_price.price),
-        });
-        coin_info[idx].previous_price = order_price.price;
-      } else {
-        console.log("long_res1 err", long_res1);
-      }
-    }
-    if (
-      order_position_list.includes(4) &&
-      !coin_info[idx].order.find((e) => e.position == 4)
-    ) {
-      order_price = order_price_list.find((e) => e.position == 4);
-      const long_res2 = await thisModule.order_long_position(
-        symbol,
-        order_price.price,
-        `create-long-limit-4-${Date.now()}`
-      );
-
-      if (checkNullish(long_res2)) return;
-
-      console.log(symbol, "long_res2", long_res2);
-
-      if (long_res2 && long_res2.ret_msg == "OK") {
-        coin_info[idx].order.push({
-          id: long_res2.result.order_id,
-          position: 4,
-          price: parseFloat(order_price.price),
-        });
-        coin_info[idx].previous_price = order_price.price;
-      } else {
-        console.log("long_res2 err");
-      }
     }
   },
   getTargetPrice: async (current_price, idx) => {

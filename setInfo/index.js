@@ -9,8 +9,7 @@ const { getPercentage } = require("../utils/index");
 const {
   get_current_price,
   create_limit_order,
-  close_one_position_market,
-  close_one_position_limit,
+  close_one_position,
 } = require("../trade/order");
 const { checkNullish } = require("../utils/index");
 const COINS = require("../COINS.json");
@@ -102,7 +101,7 @@ module.exports = {
       symbol: symbol,
     });
     if (checkNullish(res)) return;
-    if (res?.result && res.result.length != 0) {
+    if (res?.result && res.result?.length != 0) {
       for (const position of res.result) {
         // 만약 구매한 상태라면,
         if (parseFloat(position.size) != 0) {
@@ -141,26 +140,6 @@ module.exports = {
           );
           if (idx != -1) on_position_coin_list.splice(idx, 1);
         }
-
-        /**
-         * ######### TP/SL 세팅해주는 부분 limit order 때문에 임시 폐쇄
-         */
-        // if (
-        //   position.size != 0 &&
-        //   (position.stop_loss == 0 || position.take_profit == 0)
-        // ) {
-        //   // TP/SL 가 설정되어 있지 않다면,
-        //   const thisModule = require("./index");
-        //   await thisModule.setTPandSL(
-        //     position.symbol,
-        //     position.side,
-        //     parseFloat(position.entry_price)
-        //   );
-        //   // !@#
-        // }
-        /**
-         * ######## TP/SL 세팅해주는 부분 끝
-         */
       }
       /**
        * 교차인지 체크해서 만약 교차이면 isolated로 변경
@@ -212,7 +191,7 @@ module.exports = {
           const position = order.order_link_id.split("-")[0];
           coin_info[idx].order.push({
             id: order.order_id,
-            position: position,
+            side: position,
             price: parseFloat(order.price),
           });
         }
@@ -244,6 +223,15 @@ module.exports = {
       await create_limit_order(symbol, [2]);
     }
   },
+
+  close_position_3_set: async (symbol, type, side, idx) => {
+    const res1 = await close_one_position(symbol, type, side, "Limit", idx);
+    if (res1 === true) return;
+    const res2 = await close_one_position(symbol, type, side, "Limit", idx);
+    if (res2 === true) return;
+    await close_one_position(symbol, type, side, "Market", idx);
+  },
+
   // 포지션 정리할지 체크하는곳
   check_position_order: async (symbol, idx) => {
     if (on_position_coin_list.length === 0) return;
@@ -261,24 +249,82 @@ module.exports = {
             100;
         }
 
-        100;
+        const thisModule = require("./index");
+
+        const COINS_JSON = COINS.white_list.find((e) => e.symbol == symbol);
+        if (current_percentage < COINS_JSON.stop_loss) {
+          // 만약 손절가 라면, 정리
+          await thisModule.close_position_3_set(
+            symbol,
+            "all",
+            position.side,
+            idx
+          );
+        }
+
         // 익절 1~3차 까지 진행
-        const take_profit_list = COINS.white_list.profit_percentage;
+        const take_profit_list = COINS_JSON.profit_percentage;
 
         if (
           coin_info[idx].profit_left_count === 3 &&
           take_profit_list[0] < current_percentage
         ) {
           // 만약 1차 익절 조건에 충족한다면,
+          await thisModule.close_position_3_set(
+            symbol,
+            "1/3",
+            position.side,
+            idx
+          );
         } else if (
           coin_info[idx].profit_left_count === 2 &&
           take_profit_list[1] < current_percentage
         ) {
+          // 만약 2차 익절 조건에 충족한다면,
+          await thisModule.close_position_3_set(
+            symbol,
+            "1/3",
+            position.side,
+            idx
+          );
         } else if (
           coin_info[idx].profit_left_count === 1 &&
           take_profit_list[2] < current_percentage
         ) {
-        } else if (coin_info[idx].profit_left_count === 0) {
+          // 만약 3차 익절 조건에 충족한다면,
+
+          await thisModule.close_position_3_set(
+            symbol,
+            "1/3",
+            position.side,
+            idx
+          );
+        } else if (
+          position.side === "Buy" &&
+          coin_info[idx].curr_ema_30 >
+            coin_info[idx].curr_ema_7 + coin_info[idx].curr_ema_7 * 0.003
+        ) {
+          // EMA가 서로 크로스가 되었다면,
+          await thisModule.close_position_3_set(
+            symbol,
+            "all",
+            position.side,
+            idx
+          );
+        } else if (
+          position.side === "Sell" &&
+          coin_info[idx].curr_ema_30 <
+            coin_info[idx].curr_ema_7 - coin_info[idx].curr_ema_7 * 0.003
+        ) {
+          // EMA가 서로 크로스가 되었다면,
+          await thisModule.close_position_3_set(
+            symbol,
+            "all",
+            position.side,
+            idx
+          );
+        } else if (coin_info[idx].profit_left_count <= 0) {
+          // 익절할 횟수가 전부 지났다면,
           return;
         }
       }
