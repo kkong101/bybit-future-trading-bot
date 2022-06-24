@@ -7,6 +7,7 @@ const {
 const { checkNullish } = require("../utils/index");
 const COINS = require("../COINS.json");
 const TRADE = require("../TRADE.json");
+const { check_limit_order_list } = require("../setInfo/index");
 
 module.exports = {
   order_long_position: async (symbol, price, order_link_id, idx) => {
@@ -47,7 +48,7 @@ module.exports = {
       symbol: symbol,
       order_type: "Limit",
       qty: qty,
-      price: price.toFixed(precision_num),
+      price: parseFloat(price.toFixed(precision_num)),
       time_in_force: "GoodTillCancel",
       reduce_only: false,
       close_on_trigger: false,
@@ -55,9 +56,10 @@ module.exports = {
       tp_trigger_by: "LastPrice",
       sl_trigger_by: "LastPrice",
     };
-    console.log(params);
+    console.log("33## params ,", params);
     const res = await postAxios("/private/linear/order/create", params);
     if (checkNullish(res)) return;
+
     return res;
   },
   order_short_position: async (symbol, price, order_link_id, idx) => {
@@ -100,7 +102,7 @@ module.exports = {
       symbol: symbol,
       order_type: "Limit",
       qty: qty,
-      price: price.toFixed(precision_num),
+      price: parseFloat(price.toFixed(precision_num)),
       time_in_force: "GoodTillCancel",
       reduce_only: false,
       close_on_trigger: false,
@@ -108,7 +110,7 @@ module.exports = {
       tp_trigger_by: "LastPrice",
       sl_trigger_by: "LastPrice",
     };
-    console.log(params);
+    console.log("44### params ,", params);
     const res = await postAxios("/private/linear/order/create", params);
     if (checkNullish(res)) return;
     return res;
@@ -270,7 +272,7 @@ module.exports = {
     }
 
     console.log(symbol, side, qty, "### close_one_position_market", res);
-    console.log(on_position_coin_list);
+    console.log("on_position_coin_list", on_position_coin_list);
     const positionObj = on_position_coin_list.find(
       (e) => e.symbol == symbol && e.side == side
     );
@@ -297,7 +299,7 @@ module.exports = {
           close_on_trigger: false,
         };
       }
-
+      console.log("2###### params", params);
       const res = await postAxios("/private/linear/order/create", params);
       if (checkNullish(res)) return;
 
@@ -308,16 +310,20 @@ module.exports = {
         const idx = on_position_coin_list.findIndex(
           (e) => e.symbol == symbol && e.side == side
         );
-        console.log("삭제할 side", side);
-        console.log("삭제된 idx, ", idx);
-        on_position_coin_list.splice(idx, 1);
-        console.log("익절 / 손절해서 on_position_list에서 제외 해줌.");
-        if (qty_type === "all") {
-          coin_info[idx].profit_left_count = 3;
-        } else {
-          coin_info[idx].profit_left_count =
-            coin_info[idx].profit_left_count - 1;
+        if (qty_type === "1/3") {
+          let remain_qty =
+            on_position_coin_list[idx].qty - parseFloat(res.result.qty);
+          if (remain_qty <= 0) {
+            on_position_coin_list.splice(idx, 1);
+          } else {
+            on_position_coin_list[idx].qty = remain_qty;
+          }
+        } else if (qty_type === "all") {
+          on_position_coin_list.splice(idx, 1);
         }
+
+        console.log("익절 / 손절해서 on_position_list에서 제외 해줌.");
+        console.log("#####  ", qty_type, on_position_coin_list);
         return true;
       }
 
@@ -357,23 +363,30 @@ module.exports = {
 
     return current_price;
   },
-  create_limit_order: async (symbol, position, price, idx) => {
+  create_limit_order: async (symbol, side, price, idx) => {
     const thisModule = require("./order");
 
-    for (const position of on_position_coin_list) {
-      // 이미 해당 포지션에 거래가 존재한다면 return 시킴.
-      for (const my_order of coin_info[idx].order) {
-        if (
-          position.symbol == coin_info[idx].symbol &&
-          position.side == my_order.side
-        ) {
-          console.log("이미 주문 들어가서 pass");
-          return;
-        }
+    await check_limit_order_list(symbol);
+
+    console.log("### create_limit_order", coin_info[idx].order);
+    console.log("#### on_position_coin_list", on_position_coin_list);
+
+    // 이미 해당 포지션에 거래가 존재한다면 return 시킴.
+    for (const my_order of coin_info[idx].order) {
+      if (symbol == coin_info[idx].symbol && side == my_order.side) {
+        console.log("이미 주문 들어가서 pass");
+        return;
       }
     }
 
-    if (position === "Buy") {
+    // 이미 체결이 된 상태라면 return
+    for (const position of on_position_coin_list) {
+      if (position.symbol == symbol && position.side == side) {
+        return;
+      }
+    }
+
+    if (side === "Buy") {
       const res = await thisModule.order_long_position(
         symbol,
         price,
@@ -381,7 +394,7 @@ module.exports = {
         idx
       );
       console.log("### order_long_position", res);
-    } else if (position === "Sell") {
+    } else if (side === "Sell") {
       const res = await thisModule.order_short_position(
         symbol,
         price,

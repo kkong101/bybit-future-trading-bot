@@ -224,4 +224,11 @@ const qdwjnq1 = async () => {
   console.log(kk[kk.length - 1]);
 };
 
-qdwjnq1();
+const qwdqwdgsreg = async () => {
+  const res = await getAxios("/private/linear/order/search", {
+    symbol: "AXSUSDT",
+  });
+  console.log(res);
+};
+
+qwdqwdgsreg();

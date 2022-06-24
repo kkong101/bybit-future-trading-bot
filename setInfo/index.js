@@ -164,6 +164,12 @@ module.exports = {
           sell_leverage: trade.leverage,
         });
       }
+
+      // order.id 부분 체크하는 부분
+      const order_res = await getAxios("/private/linear/order/search", {
+        symbol,
+      });
+
       /**
        * The End ###
        */
@@ -177,7 +183,6 @@ module.exports = {
       symbol,
     });
     if (checkNullish(res)) return;
-    // console.log(symbol, "check_limit_order_list()", res);
 
     if (res == null || res.result == undefined) return;
 
@@ -199,6 +204,7 @@ module.exports = {
     } else {
       coin_info[idx].order = [];
     }
+    console.log("#### order/search", coin_info[idx].order);
   },
   check_position_change: async (symbol) => {
     // 포지션 체크해서 주문을 넣어주는 것까지 해주는 함수
@@ -226,10 +232,30 @@ module.exports = {
 
   close_position_3_set: async (symbol, type, side, idx) => {
     const res1 = await close_one_position(symbol, type, side, "Limit", idx);
-    if (res1 === true) return;
+    if (res1 === true) return true;
     const res2 = await close_one_position(symbol, type, side, "Limit", idx);
-    if (res2 === true) return;
-    await close_one_position(symbol, type, side, "Market", idx);
+    if (res2 === true) return true;
+    if (type === "all") {
+      const res = await close_one_position(symbol, type, side, "Market", idx);
+      if (res === true) return true;
+    } else {
+      setTimeout(async () => {
+        const res = await close_one_position(symbol, type, side, "Limit", idx);
+        if (res === true) return true;
+        if (res === true) return;
+        setTimeout(async () => {
+          const res = await close_one_position(
+            symbol,
+            type,
+            side,
+            "Limit",
+            idx
+          );
+          if (res === true) return true;
+        }, 110);
+      }, 110);
+    }
+    return false;
   },
 
   // 포지션 정리할지 체크하는곳
@@ -240,8 +266,7 @@ module.exports = {
         let current_percentage;
         if (position.side == "Buy") {
           current_percentage =
-            ((coin_info[idx].current_price - position.price) /
-              coin_info[idx].current_price) *
+            ((coin_info[idx].current_price - position.price) / position.price) *
             100;
         } else if (position.side == "Sell") {
           current_percentage =
@@ -249,12 +274,14 @@ module.exports = {
             100;
         }
 
+        console.log("### current_percentage", current_percentage);
         const thisModule = require("./index");
 
         const COINS_JSON = COINS.white_list.find((e) => e.symbol == symbol);
         if (current_percentage < COINS_JSON.stop_loss) {
+          console.log("### 손절합니다");
           // 만약 손절가 라면, 정리
-          await thisModule.close_position_3_set(
+          const result = await thisModule.close_position_3_set(
             symbol,
             "all",
             position.side,
@@ -269,41 +296,55 @@ module.exports = {
           coin_info[idx].profit_left_count === 3 &&
           take_profit_list[0] < current_percentage
         ) {
+          console.log("### 1차 익절 조건 진입");
           // 만약 1차 익절 조건에 충족한다면,
-          await thisModule.close_position_3_set(
+          const result = await thisModule.close_position_3_set(
             symbol,
             "1/3",
             position.side,
             idx
           );
+          if (result === true) {
+            coin_info[idx].profit_left_count =
+              coin_info[idx].profit_left_count - 1;
+          }
         } else if (
           coin_info[idx].profit_left_count === 2 &&
           take_profit_list[1] < current_percentage
         ) {
+          console.log("### 2차 익절 조건 진입");
           // 만약 2차 익절 조건에 충족한다면,
-          await thisModule.close_position_3_set(
+          const result = await thisModule.close_position_3_set(
             symbol,
             "1/3",
             position.side,
             idx
           );
+          if (result === true) {
+            coin_info[idx].profit_left_count =
+              coin_info[idx].profit_left_count - 1;
+          }
         } else if (
           coin_info[idx].profit_left_count === 1 &&
           take_profit_list[2] < current_percentage
         ) {
           // 만약 3차 익절 조건에 충족한다면,
-
-          await thisModule.close_position_3_set(
+          const result = await thisModule.close_position_3_set(
             symbol,
             "1/3",
             position.side,
             idx
           );
+          if (result === true) {
+            coin_info[idx].profit_left_count =
+              coin_info[idx].profit_left_count - 1;
+          }
         } else if (
           position.side === "Buy" &&
           coin_info[idx].curr_ema_30 >
             coin_info[idx].curr_ema_7 + coin_info[idx].curr_ema_7 * 0.003
         ) {
+          console.log("### 11크로스 진입");
           // EMA가 서로 크로스가 되었다면,
           await thisModule.close_position_3_set(
             symbol,
@@ -317,6 +358,7 @@ module.exports = {
             coin_info[idx].curr_ema_7 - coin_info[idx].curr_ema_7 * 0.003
         ) {
           // EMA가 서로 크로스가 되었다면,
+          console.log("### 22크로스 진입");
           await thisModule.close_position_3_set(
             symbol,
             "all",
@@ -325,6 +367,7 @@ module.exports = {
           );
         } else if (coin_info[idx].profit_left_count <= 0) {
           // 익절할 횟수가 전부 지났다면,
+          console.log("### 익절 모두했어용");
           return;
         }
       }

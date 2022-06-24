@@ -17,7 +17,7 @@ const {
   getCoinInfo,
   check_position_order,
   check_on_position_list,
-  checkPositionDirection,
+  check_limit_order_list,
 } = require("./setInfo/index");
 const EMA = require("technicalindicators").EMA;
 
@@ -110,10 +110,10 @@ const main = async () => {
 
     const curr_ema_30 =
       coin_info[idx].prev_ema_30 * (1 - 2 / (COINS_JSON.slow_EMA + 1)) +
-      price * (2 / COINS_JSON.slow_EMA + 1);
+      price * (2 / (COINS_JSON.slow_EMA + 1));
     const curr_ema_7 =
       coin_info[idx].prev_ema_7 * (1 - 2 / (COINS_JSON.rapid_EMA + 1)) +
-      price * (2 / COINS_JSON.rapid_EMA + 1);
+      price * (2 / (COINS_JSON.rapid_EMA + 1));
     coin_info[idx].curr_ema_30 = curr_ema_30;
     coin_info[idx].curr_ema_7 = curr_ema_7;
     console.log("###30", curr_ema_30);
@@ -166,12 +166,17 @@ const main = async () => {
       }
     }
 
+    console.log("### diff_percent", diff_percent);
     // 둘다 아니라면 포지션취소하고 그리고 포지션잡지 않고 대기
     if (
       diff_percent < COINS_JSON.limit_order_signal * -1 ||
       diff_percent > COINS_JSON.limit_order_signal
     ) {
       for (const order of coin_info[idx].order) {
+        console.log(
+          "### 둘다 아니라면 포지션취소하고 그리고 포지션잡지 않고 대기",
+          order
+        );
         await cancel_one_side_limit_order(symbol, order.side, idx);
       }
     }
@@ -201,13 +206,13 @@ const main = async () => {
     setInterval(async () => {
       // queue에 쌓긴 거래 내역 업데이트 해주는 부분
       if (queue.length > 0) {
-        await check_on_position_list(queue.shift().symbol);
+        const symbol = queue.shift().symbol;
+        await check_on_position_list(symbol);
         // 거래 체결 완료
       }
       // EMA 체크 ####
       for (const coin of coin_info) {
         if (new Date().getMinutes() === prev_min) {
-          console.log("시간 아직 안바뀌어서 pass");
         } else {
           const COINS_JSON = COINS.white_list.find(
             (e) => e.symbol == coin.symbol
