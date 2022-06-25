@@ -3,25 +3,25 @@
     {
       "range": "1~20",
       "leverage": 9.9,
-      "using_money_rate": 1,
+      "using_money_rate": 0.9,
       "trade_position": "both"
     },
     {
       "range": "20~50",
       "leverage": 9.9,
-      "using_money_rate": 1,
+      "using_money_rate":0.9,
       "trade_position": "both"
     },
     {
       "range": "50~55",
       "leverage": 9.9,
-      "using_money_rate": 1,
+      "using_money_rate": 0.9,
       "trade_position": "both"
     },
     {
       "range": "55~100",
       "leverage": 9.9,
-      "using_money_rate": 1,
+      "using_money_rate": 0.9,
       "trade_position": "both"
     }
   ],

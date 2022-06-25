@@ -29,10 +29,11 @@ module.exports = {
       up_or_down: "up"
     }
    * order: [
-        {
-          id: "fnewejnf",
-          side: "Buy"
-        },
+          {
+            id: order.order_id,
+            side: position,
+            price: parseFloat(order.price),
+          },
         {
           id: "fnewejnf",
           side: "Sell"

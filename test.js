@@ -225,10 +225,9 @@ const qdwjnq1 = async () => {
 };
 
 const qwdqwdgsreg = async () => {
-  const res = await getAxios("/private/linear/order/search", {
-    symbol: "AXSUSDT",
-  });
-  console.log(res);
+  const test = 0.3;
+
+  console.log(test.toFixed(1));
 };
 
 qwdqwdgsreg();

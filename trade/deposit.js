@@ -50,12 +50,13 @@ module.exports = {
   },
   cancel_one_side_limit_order: async (symbol, side, idx) => {
     for (const order of coin_info[idx].order) {
-      if (order.position !== side) continue;
-      const res = await postAxios("/private/linear/order/cancel", {
-        symbol: symbol,
-        order_id: order.id,
-      });
-      console.log("##### /private/linear/order/cancel", res);
+      if (order.side === side) {
+        const res = await postAxios("/private/linear/order/cancel", {
+          symbol: symbol,
+          order_id: order.id,
+        });
+        console.log("##### /private/linear/order/cancel", res);
+      }
     }
   },
   setBalance: async () => {

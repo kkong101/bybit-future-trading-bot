@@ -7,7 +7,6 @@ const {
 const { checkNullish } = require("../utils/index");
 const COINS = require("../COINS.json");
 const TRADE = require("../TRADE.json");
-const { check_limit_order_list } = require("../setInfo/index");
 
 module.exports = {
   order_long_position: async (symbol, price, order_link_id, idx) => {
@@ -259,7 +258,7 @@ module.exports = {
     if (checkNullish(res)) return;
 
     // 이미 매도가 되었다면 skip
-    if (res.result.length === 0) return;
+    if (res.result?.length === 0) return;
 
     let qty;
 
@@ -269,6 +268,17 @@ module.exports = {
       const qty_step = coin_info[idx].qty_step;
       const total_qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
       qty = total_qty / 3 - ((total_qty / 3) % qty_step);
+
+      let precision_num = 0;
+      const stringed_number = qty_step.toString();
+      if (stringed_number.split(".")[0].length != stringed_number.length) {
+        precision_num = stringed_number.split(".")[1].length;
+      }
+      qty = parseFloat(qty.toFixed(precision_num));
+
+      if (coin_info[idx].min_trading_qty > qty) {
+        qty = coin_info[idx].min_trading_qty;
+      }
     }
 
     console.log(symbol, side, qty, "### close_one_position_market", res);
@@ -320,6 +330,8 @@ module.exports = {
           }
         } else if (qty_type === "all") {
           on_position_coin_list.splice(idx, 1);
+          const coinObj = coin_info.find((e) => e.symbol == symbol);
+          coinObj.profit_left_count = 3;
         }
 
         console.log("익절 / 손절해서 on_position_list에서 제외 해줌.");
@@ -365,11 +377,8 @@ module.exports = {
   },
   create_limit_order: async (symbol, side, price, idx) => {
     const thisModule = require("./order");
-
-    await check_limit_order_list(symbol);
-
     console.log("### create_limit_order", coin_info[idx].order);
-    console.log("#### on_position_coin_list", on_position_coin_list);
+    console.log("####1 on_position_coin_list", on_position_coin_list);
 
     // 이미 해당 포지션에 거래가 존재한다면 return 시킴.
     for (const my_order of coin_info[idx].order) {

@@ -108,9 +108,26 @@ module.exports = {
           const onPositionObj = on_position_coin_list.find(
             (e) => e.symbol == position.symbol && e.side == position.side
           );
+
           if (onPositionObj) {
-            if (parseFloat(position.size) > parseFloat(onPositionObj.qty)) {
+            const prev_qty = parseFloat(onPositionObj.qty);
+            if (parseFloat(position.size) > prev_qty) {
               // 만약 추매이면,
+              // 구입 시간 갱신
+              onPositionObj.time = Date.now();
+              // 수량 갱신
+              onPositionObj.qty = parseFloat(position.size);
+              // 가격 갱신
+              onPositionObj.price = parseFloat(position.entry_price);
+
+              // 청산가 갱신
+              onPositionObj.liq_price = parseFloat(position.liq_price);
+            } else if (parseFloat(position.size) < prev_qty) {
+              // 부분 익절이라면,
+              // ### profit_left_count 부분 계산해줌
+              const coinObj = coin_info.find((e) => e.symbol == symbol);
+              coinObj.profit_left_count = coinObj.profit_left_count - 1;
+
               // 구입 시간 갱신
               onPositionObj.time = Date.now();
               // 수량 갱신
@@ -204,7 +221,7 @@ module.exports = {
     } else {
       coin_info[idx].order = [];
     }
-    console.log("#### order/search", coin_info[idx].order);
+    console.log("#### coin_info[idx].order", coin_info[idx].order);
   },
   check_position_change: async (symbol) => {
     // 포지션 체크해서 주문을 넣어주는 것까지 해주는 함수
@@ -274,11 +291,13 @@ module.exports = {
             100;
         }
 
+        console.log("### 현재 코인 가격", coin_info[idx].current_price);
+        console.log("### 구매한 코인 가격", position.price);
         console.log("### current_percentage", current_percentage);
         const thisModule = require("./index");
 
         const COINS_JSON = COINS.white_list.find((e) => e.symbol == symbol);
-        if (current_percentage < COINS_JSON.stop_loss) {
+        if (current_percentage < COINS_JSON.stop_loss * -1) {
           console.log("### 손절합니다");
           // 만약 손절가 라면, 정리
           const result = await thisModule.close_position_3_set(
@@ -304,10 +323,6 @@ module.exports = {
             position.side,
             idx
           );
-          if (result === true) {
-            coin_info[idx].profit_left_count =
-              coin_info[idx].profit_left_count - 1;
-          }
         } else if (
           coin_info[idx].profit_left_count === 2 &&
           take_profit_list[1] < current_percentage
@@ -320,10 +335,6 @@ module.exports = {
             position.side,
             idx
           );
-          if (result === true) {
-            coin_info[idx].profit_left_count =
-              coin_info[idx].profit_left_count - 1;
-          }
         } else if (
           coin_info[idx].profit_left_count === 1 &&
           take_profit_list[2] < current_percentage
@@ -331,18 +342,13 @@ module.exports = {
           // 만약 3차 익절 조건에 충족한다면,
           const result = await thisModule.close_position_3_set(
             symbol,
-            "1/3",
+            "all",
             position.side,
             idx
           );
-          if (result === true) {
-            coin_info[idx].profit_left_count =
-              coin_info[idx].profit_left_count - 1;
-          }
         } else if (
           position.side === "Buy" &&
-          coin_info[idx].curr_ema_30 >
-            coin_info[idx].curr_ema_7 + coin_info[idx].curr_ema_7 * 0.003
+          coin_info[idx].curr_ema_30 > coin_info[idx].curr_ema_7
         ) {
           console.log("### 11크로스 진입");
           // EMA가 서로 크로스가 되었다면,
@@ -354,8 +360,7 @@ module.exports = {
           );
         } else if (
           position.side === "Sell" &&
-          coin_info[idx].curr_ema_30 <
-            coin_info[idx].curr_ema_7 - coin_info[idx].curr_ema_7 * 0.003
+          coin_info[idx].curr_ema_30 < coin_info[idx].curr_ema_7
         ) {
           // EMA가 서로 크로스가 되었다면,
           console.log("### 22크로스 진입");

@@ -18,6 +18,7 @@ const {
   check_position_order,
   check_on_position_list,
   check_limit_order_list,
+  set_isolated_mode,
 } = require("./setInfo/index");
 const EMA = require("technicalindicators").EMA;
 
@@ -55,6 +56,8 @@ const wsConfigUpdate = {
 
 const main = async () => {
   await getCoinInfo();
+  await setBalance();
+  await set_isolated_mode();
 
   const wsUpdate = new WebsocketClient(wsConfigUpdate);
 
@@ -143,6 +146,7 @@ const main = async () => {
       const sideIdx = coin_info[idx].order.findIndex((e) => e.side === "Buy");
       if (sideIdx === -1) {
         // 구매 후 1분간 거래 정지
+        await check_limit_order_list(symbol);
         const res = await create_limit_order(
           symbol,
           "Buy",
@@ -157,6 +161,7 @@ const main = async () => {
       const sideIdx = coin_info[idx].order.findIndex((e) => e.side === "Buy");
       if (sideIdx === -1) {
         // 구매 후 1분간 거래 정지
+        await check_limit_order_list(symbol);
         const res = await create_limit_order(
           symbol,
           "Sell",
@@ -200,15 +205,30 @@ const main = async () => {
   });
   // ###############
 
+  // 포지션 체크
+  setInterval(async () => {
+    for (const coin of coin_info) {
+      await check_on_position_list(coin.symbol);
+      await check_limit_order_list(coin.symbol);
+      setBalance();
+      set_isolated_mode();
+    }
+  }, 20 * 1000);
+
+  // #########
+
   // ### EMA 체크하는 부분
   setTimeout(() => {
     let prev_min = 0;
     setInterval(async () => {
       // queue에 쌓긴 거래 내역 업데이트 해주는 부분
       if (queue.length > 0) {
-        const symbol = queue.shift().symbol;
-        await check_on_position_list(symbol);
-        // 거래 체결 완료
+        while (true) {
+          console.log("#### queue 실행");
+          const symbol = queue.shift().symbol;
+          await check_on_position_list(symbol);
+          if (queue.length === 0) break;
+        }
       }
       // EMA 체크 ####
       for (const coin of coin_info) {
@@ -243,7 +263,7 @@ const main = async () => {
           prev_min = new Date().getMinutes();
         }
       }
-    }, 2000);
+    }, 1000);
   }, 1000);
 
   // 에러 처리 해야되는 부분
