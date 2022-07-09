@@ -144,7 +144,7 @@ const main = async () => {
             await cancel_one_side_limit_order(symbol, "Sell", idx);
             await cancel_one_side_limit_order(symbol, "Buy", idx);
           }
-        }, 30 * 1000);
+        }, 40 * 1000);
       }
 
       coin_info[idx].up_or_down = "down";
@@ -163,7 +163,7 @@ const main = async () => {
             await cancel_one_side_limit_order(symbol, "Buy", idx);
             await cancel_one_side_limit_order(symbol, "Sell", idx);
           }
-        }, 30 * 1000);
+        }, 40 * 1000);
       }
       coin_info[idx].up_or_down = "up";
     }
@@ -178,7 +178,11 @@ const main = async () => {
       diff_percent < COINS_JSON.limit_order_signal
     ) {
       const sideIdx = coin_info[idx].order.findIndex((e) => e.side === "Buy");
-      if (sideIdx === -1) {
+      const positionIdx = on_position_coin_list.findIndex(
+        (e) => ((e.symbol == symbol) == e.side) == "Buy"
+      );
+
+      if (sideIdx === -1 && positionIdx === -1) {
         if (Date.now() - coin_info[idx].recent_try_order_time < 60 * 1000)
           return;
         // 구매 후 1분간 거래 정지
@@ -200,10 +204,13 @@ const main = async () => {
     if (
       coin_info[idx].isCrossed === true &&
       diff_percent < 0 &&
-      diff_percent < COINS_JSON.limit_order_signal * -1
+      diff_percent * -1 < COINS_JSON.limit_order_signal
     ) {
-      const sideIdx = coin_info[idx].order.findIndex((e) => e.side === "Buy");
-      if (sideIdx === -1) {
+      const sideIdx = coin_info[idx].order.findIndex((e) => e.side === "Sell");
+      const positionIdx = on_position_coin_list.findIndex(
+        (e) => ((e.symbol == symbol) == e.side) == "Sell"
+      );
+      if (sideIdx === -1 && positionIdx === -1) {
         if (Date.now() - coin_info[idx].recent_try_order_time < 60 * 1000)
           return;
         // 구매 후 1분간 거래 정지
@@ -262,7 +269,6 @@ const main = async () => {
       await check_on_position_list(coin.symbol);
       await check_limit_order_list(coin.symbol);
       setBalance();
-      set_isolated_mode();
     }
   }, 20 * 1000);
 

@@ -186,9 +186,9 @@ module.exports = {
       }
 
       // order.id 부분 체크하는 부분
-      const order_res = await getAxios("/private/linear/order/search", {
-        symbol,
-      });
+      // const order_res = await getAxios("/private/linear/order/search", {
+      //   symbol,
+      // });
 
       /**
        * The End ###
@@ -251,37 +251,11 @@ module.exports = {
   },
 
   close_position_3_set: async (symbol, type, side, idx) => {
+    // 손절일경우 ?
     const res1 = await close_one_position(symbol, type, side, "Limit", idx);
-    if (res1 === true) return true;
     const res2 = await close_one_position(symbol, type, side, "Limit", idx);
-    if (res2 === true) return true;
-    if (type === "all") {
-      const res = await close_one_position(symbol, type, side, "Market", idx);
-      if (res === true) return true;
-    } else {
-      setTimeout(async () => {
-        const res = await close_one_position(symbol, type, side, "Limit", idx);
-        if (res === true) return true;
-        setTimeout(async () => {
-          const res = await close_one_position(
-            symbol,
-            type,
-            side,
-            "Limit",
-            idx
-          );
-          if (res === true) return true;
-          const res3 = await close_one_position(
-            symbol,
-            type,
-            side,
-            "Market",
-            idx
-          );
-          if (res3 === true) return true;
-        }, 110);
-      }, 110);
-    }
+    const res3 = await close_one_position(symbol, type, side, "Market", idx);
+    if (res1 === true || res2 === true || res3 === true) return true;
     return false;
   },
 
@@ -307,7 +281,7 @@ module.exports = {
         const thisModule = require("./index");
 
         const COINS_JSON = COINS.white_list.find((e) => e.symbol == symbol);
-        if (current_percentage < COINS_JSON.stop_loss * -1) {
+        if (current_percentage * -1 > COINS_JSON.stop_loss) {
           console.log("### 손절합니다");
           // 만약 손절가 라면, 정리
           const result = await thisModule.close_position_3_set(
@@ -318,8 +292,9 @@ module.exports = {
           );
         }
 
-        // 익절 1~3차 까지 진행
+        // 익절## 1~3차 까지 진행
         const take_profit_list = COINS_JSON.profit_percentage;
+        const take_profit_qty_percent = COINS_JSON.profit_qty_percent;
 
         if (
           coin_info[idx].profit_left_count === 3 &&
@@ -329,7 +304,7 @@ module.exports = {
           // 만약 1차 익절 조건에 충족한다면,
           const result = await thisModule.close_position_3_set(
             symbol,
-            "1/3",
+            take_profit_qty_percent[0],
             position.side,
             idx
           );
@@ -344,7 +319,7 @@ module.exports = {
           // 만약 2차 익절 조건에 충족한다면,
           const result = await thisModule.close_position_3_set(
             symbol,
-            "1/3",
+            take_profit_qty_percent[1],
             position.side,
             idx
           );
@@ -358,7 +333,7 @@ module.exports = {
           // 만약 3차 익절 조건에 충족한다면,
           const result = await thisModule.close_position_3_set(
             symbol,
-            "all",
+            take_profit_qty_percent[2],
             position.side,
             idx
           );

@@ -262,7 +262,7 @@ module.exports = {
 
     if (qty_type == "all") {
       qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
-    } else if (qty_type == "1/3") {
+    } else {
       const qty_step = coin_info[idx].qty_step;
       const onPositionObj = on_position_coin_list.find(
         (e) => e.symbol == symbol && e.side == side
@@ -271,8 +271,8 @@ module.exports = {
       if (onPositionObj == null) return;
 
       qty =
-        onPositionObj.initial_qty / 3 -
-        ((onPositionObj.initial_qty / 3) % qty_step);
+        onPositionObj.initial_qty * qty_type -
+        ((onPositionObj.initial_qty * qty_type) % qty_step);
 
       if (onPositionObj.qty < qty) qty = onPositionObj.qty;
 
@@ -328,7 +328,7 @@ module.exports = {
         const idx = on_position_coin_list.findIndex(
           (e) => e.symbol == symbol && e.side == side
         );
-        if (qty_type === "1/3") {
+        if (qty_type != "all") {
           let remain_qty =
             on_position_coin_list[idx].qty - parseFloat(res.result.qty);
           if (remain_qty <= 0) {
@@ -336,7 +336,7 @@ module.exports = {
           } else {
             on_position_coin_list[idx].qty = remain_qty;
           }
-        } else if (qty_type === "all") {
+        } else if (qty_type == "all") {
           on_position_coin_list.splice(idx, 1);
           const coinObj = coin_info.find((e) => e.symbol == symbol);
           coinObj.profit_left_count = 3;
@@ -366,7 +366,7 @@ module.exports = {
       return false;
     } else {
       console.log("발견 못해서 return !!! ", symbol);
-      return;
+      return false;
     }
   },
 
