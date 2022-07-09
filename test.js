@@ -15,6 +15,7 @@ const {
   close_one_position_market,
   close_all_position,
   get_current_price,
+  create_market_order,
 } = require("./trade/order");
 
 const COINS = require("./COINS.json");
@@ -225,9 +226,22 @@ const qdwjnq1 = async () => {
 };
 
 const qwdqwdgsreg = async () => {
-  const test = 0.3;
-
-  console.log(test.toFixed(1));
+  // create_market_order: async(symbol, price, order_link_id, idx);
+  const params = {
+    side: "Buy",
+    symbol: "ETHUSDT",
+    order_type: "Market",
+    qty: 0.1,
+    time_in_force: "GoodTillCancel",
+    reduce_only: false,
+    close_on_trigger: false,
+    order_link_id: "Buy123",
+    tp_trigger_by: "LastPrice",
+    sl_trigger_by: "LastPrice",
+  };
+  console.log("33## params ,", params);
+  const res = await postAxios("/private/linear/order/create", params);
+  console.log(res);
 };
 
 qwdqwdgsreg();

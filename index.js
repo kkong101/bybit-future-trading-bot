@@ -10,7 +10,11 @@ const { coin_info, on_position_coin_list } = require("./globalState/index");
 const { trade } = require("./globalState/index");
 const COINS = require("./COINS.json");
 const TRADE = require("./TRADE.json");
-const { replace_order, create_limit_order } = require("./trade/order");
+const {
+  replace_order,
+  create_limit_order,
+  create_market_order,
+} = require("./trade/order");
 const { check_send_order } = require("./subscribe/update");
 const { getAxios } = require("./axios/index");
 const {
@@ -126,48 +130,95 @@ const main = async () => {
       percent > 1 ? -1 * (percent - 1) * 100 : (1 - percent) * 100;
     console.log("diff", diff_percent);
     if (diff_percent < 0) {
+      if (
+        coin_info[idx].isCrossed === false &&
+        coin_info[idx].up_or_down == "up"
+      ) {
+        // 위에서 아래로 가면서 크로스 교차
+        coin_info[idx].isCrossed = true;
+
+        // 30초 후에 교차상태 false로 변경하고 주문 걸려있는거 전부다 취소
+        setTimeout(async () => {
+          coin_info[idx].isCrossed = false;
+          if (coin_info[idx].order.length != 0) {
+            await cancel_one_side_limit_order(symbol, "Sell", idx);
+            await cancel_one_side_limit_order(symbol, "Buy", idx);
+          }
+        }, 30 * 1000);
+      }
+
       coin_info[idx].up_or_down = "down";
     } else {
+      if (
+        coin_info[idx].isCrossed === false &&
+        coin_info[idx].up_or_down == "down"
+      ) {
+        // 아래에서 위로가면서 크로스 교차
+        coin_info[idx].isCrossed = true;
+
+        // 30초 후에 교차상태 false로 변경하고 주문 걸려있는거 전부다 취소
+        setTimeout(async () => {
+          coin_info[idx].isCrossed = false;
+          if (coin_info[idx].order.length != 0) {
+            await cancel_one_side_limit_order(symbol, "Buy", idx);
+            await cancel_one_side_limit_order(symbol, "Sell", idx);
+          }
+        }, 30 * 1000);
+      }
       coin_info[idx].up_or_down = "up";
     }
 
+    console.log("#### isCross ", coin_info[idx].isCrossed);
     console.log("###", coin_info[idx]);
 
-    /**
-     *  if (
-        coin_info[idx].prev_ema_7 < coin_info[idx].prev_ema_30 &&
-        diff_percent > 0 &&
-        diff_percent < COINS_JSON.limit_order_signal
-    )
-     */
-
-    // 롱포지션 탑승 아래에서 위로 넘어오는 애만
-    if (diff_percent > 0 && diff_percent < COINS_JSON.limit_order_signal) {
+    // 롱포지션 탑승 - 아래에서 위로 넘어오는 애만
+    if (
+      coin_info[idx].isCrossed === true &&
+      diff_percent > 0 &&
+      diff_percent < COINS_JSON.limit_order_signal
+    ) {
       const sideIdx = coin_info[idx].order.findIndex((e) => e.side === "Buy");
       if (sideIdx === -1) {
+        if (Date.now() - coin_info[idx].recent_try_order_time < 60 * 1000)
+          return;
         // 구매 후 1분간 거래 정지
-        await check_limit_order_list(symbol);
-        const res = await create_limit_order(
-          symbol,
-          "Buy",
-          curr_ema_7 + (curr_ema_7 * COINS_JSON.limit_order_gap) / 100,
-          idx
-        );
+        coin_info[idx].recent_try_order_time = Date.now();
+
+        // ###############
+        // 일단 시장가로.. for TEST
+        // await create_limit_order(symbol, "Buy", curr_ema_7, idx);
+        // ###############
+        const isSuccessed = await create_market_order(symbol, "Buy", idx);
+        if (isSuccessed) {
+          await check_limit_order_list(symbol);
+          await check_on_position_list(symbol);
+        }
       }
     }
 
     // 숏포지션 탑승 위에서 아래로 내려오는 애만
-    if (diff_percent < 0 && diff_percent > COINS_JSON.limit_order_signal * -1) {
+    if (
+      coin_info[idx].isCrossed === true &&
+      diff_percent < 0 &&
+      diff_percent < COINS_JSON.limit_order_signal * -1
+    ) {
       const sideIdx = coin_info[idx].order.findIndex((e) => e.side === "Buy");
       if (sideIdx === -1) {
+        if (Date.now() - coin_info[idx].recent_try_order_time < 60 * 1000)
+          return;
         // 구매 후 1분간 거래 정지
-        await check_limit_order_list(symbol);
-        const res = await create_limit_order(
-          symbol,
-          "Sell",
-          curr_ema_7 - (curr_ema_7 * COINS_JSON.limit_order_gap) / 100,
-          idx
-        );
+        coin_info[idx].recent_try_order_time = Date.now();
+
+        // ###############
+        // 일단 시장가로.. for TEST
+        // await create_limit_order(symbol, "Sell", curr_ema_7, idx);
+        // ###############
+
+        const isSuccessed = await create_market_order(symbol, "Sell", idx);
+        if (isSuccessed) {
+          await check_limit_order_list(symbol);
+          await check_on_position_list(symbol);
+        }
       }
     }
 

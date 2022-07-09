@@ -35,6 +35,8 @@ module.exports = {
             qty_step: parseFloat(result.lot_size_filter.qty_step),
             previous_price: current_price,
             current_price: current_price,
+            recent_try_order_time: Date.now(),
+            isCrossed: false,
             profit_left_count: coinObj.profit_percentage.length,
             order: [],
           });
@@ -126,7 +128,7 @@ module.exports = {
               // 부분 익절이라면,
               // ### profit_left_count 부분 계산해줌
               const coinObj = coin_info.find((e) => e.symbol == symbol);
-              coinObj.profit_left_count = coinObj.profit_left_count - 1;
+              // coinObj.profit_left_count = coinObj.profit_left_count - 1;
 
               // 구입 시간 갱신
               onPositionObj.time = Date.now();
@@ -145,6 +147,7 @@ module.exports = {
               side: position.side,
               price: parseFloat(position.entry_price),
               qty: parseFloat(position.size),
+              initial_qty: parseFloat(position.size),
               time: Date.now(),
               liq_price: parseFloat(position.liq_price),
             });
@@ -259,7 +262,6 @@ module.exports = {
       setTimeout(async () => {
         const res = await close_one_position(symbol, type, side, "Limit", idx);
         if (res === true) return true;
-        if (res === true) return;
         setTimeout(async () => {
           const res = await close_one_position(
             symbol,
@@ -269,6 +271,14 @@ module.exports = {
             idx
           );
           if (res === true) return true;
+          const res3 = await close_one_position(
+            symbol,
+            type,
+            side,
+            "Market",
+            idx
+          );
+          if (res3 === true) return true;
         }, 110);
       }, 110);
     }
@@ -323,6 +333,9 @@ module.exports = {
             position.side,
             idx
           );
+          if (result == true)
+            coin_info[idx].profit_left_count =
+              coin_info[idx].profit_left_count - 1;
         } else if (
           coin_info[idx].profit_left_count === 2 &&
           take_profit_list[1] < current_percentage
@@ -335,6 +348,9 @@ module.exports = {
             position.side,
             idx
           );
+          if (result == true)
+            coin_info[idx].profit_left_count =
+              coin_info[idx].profit_left_count - 1;
         } else if (
           coin_info[idx].profit_left_count === 1 &&
           take_profit_list[2] < current_percentage
@@ -346,6 +362,9 @@ module.exports = {
             position.side,
             idx
           );
+          if (result == true)
+            coin_info[idx].profit_left_count =
+              coin_info[idx].profit_left_count - 1;
         } else if (
           position.side === "Buy" &&
           coin_info[idx].curr_ema_30 > coin_info[idx].curr_ema_7

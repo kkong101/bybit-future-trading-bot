@@ -16,8 +16,6 @@ module.exports = {
 
     const coinObject = coin_info[idx];
 
-    const COIN_JSON_INFO = COINS.white_list.find((e) => e.symbol == symbol);
-
     let qty = available_balance / price;
 
     const namo = qty % coinObject.qty_step;
@@ -266,8 +264,17 @@ module.exports = {
       qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
     } else if (qty_type == "1/3") {
       const qty_step = coin_info[idx].qty_step;
-      const total_qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
-      qty = total_qty / 3 - ((total_qty / 3) % qty_step);
+      const onPositionObj = on_position_coin_list.find(
+        (e) => e.symbol == symbol && e.side == side
+      );
+
+      if (onPositionObj == null) return;
+
+      qty =
+        onPositionObj.initial_qty / 3 -
+        ((onPositionObj.initial_qty / 3) % qty_step);
+
+      if (onPositionObj.qty < qty) qty = onPositionObj.qty;
 
       let precision_num = 0;
       const stringed_number = qty_step.toString();
@@ -277,7 +284,7 @@ module.exports = {
       qty = parseFloat(qty.toFixed(precision_num));
 
       if (coin_info[idx].min_trading_qty > qty) {
-        qty = coin_info[idx].min_trading_qty;
+        qty = parseFloat(res?.result[side == "Buy" ? 0 : 1].size);
       }
     }
 
@@ -317,6 +324,7 @@ module.exports = {
 
       // 판매가 완료 되었으면,  on_position_coin_list 에서 빼줌 .
       if (res?.ret_msg == "OK" && res?.ret_code == 0) {
+        console.log("@@#!@#", res);
         const idx = on_position_coin_list.findIndex(
           (e) => e.symbol == symbol && e.side == side
         );
@@ -412,6 +420,61 @@ module.exports = {
       );
       console.log("### order_short_position", res);
     }
+  },
+  create_market_order: async (symbol, side, idx) => {
+    // 얼마나 살건지 가격 측정하는 부분.
+    const available_balance =
+      (trade.total_money * trade.using_money_rate) / coin_info.length;
+
+    const coinObject = coin_info[idx];
+
+    const price = coinObject.current_price;
+
+    let qty = available_balance / price;
+
+    const namo = qty % coinObject.qty_step;
+
+    qty = qty - namo;
+
+    if (qty < coinObject.min_trading_qty) {
+      console.log("최소 수량보다 주문 수량이 더 적음..");
+      // 만약에 돈이 없다면,
+      return;
+    }
+
+    let precision_num = 0;
+    const stringed_number = coin_info[idx].current_price.toString();
+    if (stringed_number.split(".")[0].length != stringed_number.length) {
+      precision_num = stringed_number.split(".")[1].length;
+    }
+
+    const splited = qty.toString().split(".");
+    if (splited.length == 2 && splited[1].length > 6) {
+      const rest = qty - qty.toFixed(5);
+      qty = qty - rest;
+    }
+
+    const params = {
+      side: side,
+      symbol: symbol,
+      order_type: "Market",
+      qty: qty,
+      time_in_force: "GoodTillCancel",
+      reduce_only: false,
+      close_on_trigger: false,
+      order_link_id: `${side}-${Date.now()}`,
+      tp_trigger_by: "LastPrice",
+      sl_trigger_by: "LastPrice",
+    };
+    console.log("33## params ,", params);
+    const res = await postAxios("/private/linear/order/create", params);
+    if (checkNullish(res)) return;
+    if (res.ret_code == 0 && res.ret_msg == "OK") {
+      // 시장가 체결이 이뤄진다면,
+      return true;
+    }
+
+    return false;
   },
   getTargetPrice: async (current_price, idx) => {
     const tick_size = coin_info[idx].tick_size;
