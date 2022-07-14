@@ -2,13 +2,13 @@
   "white_list": [
     {
       "symbol": "NEARUSDT",
-      "profit_percentage": [0.1, 0.2, 0.3],
-      "profit_qty_percent" : [0.2, 0.2, 0.2],
-      "limit_order_gap": 0.09,
-      "limit_order_signal": 0.02,
-      "stop_loss" : 0.2,
-      "slow_EMA": 15,
-      "rapid_EMA": 5
+      "partial_profit_percent": 0.3,
+      "take_profit": 0.6,
+      "partial_profit_qty_percent": 0.5,
+      "order_gap": 0.5,
+      "stop_loss": 0.6,
+      "indicator_stdDev": 2,
+      "indicator_period": 20
     }
   ],
   "no_trade_list": [
