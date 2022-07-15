@@ -11,11 +11,15 @@ const {
   getCleanFloat,
   findCoinInfo,
   findOrderInfo,
+  existLimitOrder,
+  existOnPosition,
+  getClearnQty,
 } = require("../utils/index");
 const {
   check_on_position_list,
   check_limit_order_list,
 } = require("../trade/check");
+const { trade } = require("../globalState");
 
 module.exports = {
   /**
@@ -97,78 +101,107 @@ module.exports = {
 
     const check_side_list = ["Buy", "Sell"];
 
-    for (const side of check_side_list) {
-      const orderObj = findOrderInfo(coinObj, side);
-      if (orderObj === null) continue;
-      const qty = orderObj.qty;
-      if (coinObj.up_or_down === "up" && orderObj.side === "Buy") {
-        // 위쪽 주문 취소하고 아래쪽으로 바꿔줘야댐.
-        const res = await cancel_one_side_limit_order(symbol, side);
+    // 만약 체결된 거래가 없고, limit_order가 없으면 신규로 주문을 넣는다.
+    if (!existLimitOrder(coinObj) && !existOnPosition(symbol)) {
+      // (symbol, side, price, qty, order_type)
+      let side = "Buy";
+      let price = 0;
+      let qty =
+        (trade.total_money / coinObj.current_price) * trade.using_money_rate;
 
-        if (res === true) {
-          const price = getCleanFloat(
-            coinObj.prev_lower -
-              coinObj.prev_lower * (whiteCoinObj.order_gap / 100),
-            coinObj.tick_size
-          );
+      if (coinObj.up_or_down === "up") {
+        side = "Sell";
+        price =
+          coinObj.current_price +
+          coinObj.current_price * (whiteCoinObj.order_gap / 100);
+      } else {
+        side = "Buy";
+        price =
+          coinObj.current_price -
+          coinObj.current_price * (whiteCoinObj.order_gap / 100);
+        await create_one_position(
+          symbol,
+          side,
+          getCleanFloat(price, coinObj.tick_size),
+          getClearnQty(qty, coinObj.qty_step),
+          "Limit"
+        );
+        return true;
+      }
 
-          await create_one_position(symbol, "Buy", price, qty, "Limit");
-          await check_limit_order_list(symbol);
-        }
-      } else if (coinObj.up_or_down === "down" && orderObj.side === "Sell") {
-        // 아래쪽 주문 취소하고 위쪽으로 바꿔줘야댐.
-        const res = await cancel_one_side_limit_order(symbol, side);
-        if (res === true) {
-          const price = getCleanFloat(
+      for (const side of check_side_list) {
+        const orderObj = findOrderInfo(coinObj, side);
+        if (orderObj === null) continue;
+        const qty = orderObj.qty;
+        if (coinObj.up_or_down === "up" && orderObj.side === "Buy") {
+          // 위쪽 주문 취소하고 아래쪽으로 바꿔줘야댐.
+          const res = await cancel_one_side_limit_order(symbol, side);
+
+          if (res === true) {
+            const price = getCleanFloat(
+              coinObj.prev_lower -
+                coinObj.prev_lower * (whiteCoinObj.order_gap / 100),
+              coinObj.tick_size
+            );
+
+            await create_one_position(symbol, "Buy", price, qty, "Limit");
+            await check_limit_order_list(symbol);
+          }
+        } else if (coinObj.up_or_down === "down" && orderObj.side === "Sell") {
+          // 아래쪽 주문 취소하고 위쪽으로 바꿔줘야댐.
+          const res = await cancel_one_side_limit_order(symbol, side);
+          if (res === true) {
+            const price = getCleanFloat(
+              coinObj.prev_upper +
+                coinObj.prev_upper * (whiteCoinObj.order_gap / 100),
+              coinObj.tick_size
+            );
+
+            await create_one_position(symbol, "Sell", price, qty, "Limit");
+            await check_limit_order_list(symbol);
+          }
+        } else if (orderObj.side === "Sell") {
+          // 위쪽 주문인 경우.
+          const ordered_price = orderObj.price;
+          const target_price =
             coinObj.prev_upper +
-              coinObj.prev_upper * (whiteCoinObj.order_gap / 100),
-            coinObj.tick_size
-          );
-
-          await create_one_position(symbol, "Sell", price, qty, "Limit");
-          await check_limit_order_list(symbol);
-        }
-      } else if (orderObj.side === "Sell") {
-        // 위쪽 주문인 경우.
-        const ordered_price = orderObj.price;
-        const target_price =
-          coinObj.prev_upper +
-          coinObj.prev_upper * (whiteCoinObj.order_gap / 100);
-        if (
-          !(
-            ordered_price < target_price * 1.01 &&
-            ordered_price > target_price * 0.99
-          )
-        ) {
-          // 가격 변경을 해준다.
-          //  (symbol, side, price)
-          const price = getCleanFloat(
-            coinObj.prev_upper +
-              coinObj.prev_upper * (whiteCoinObj.order_gap / 100),
-            coinObj.tick_size
-          );
-          await replace_one_position(symbol, side, price);
-        }
-      } else if (orderObj.side === "Buy") {
-        // 아래쪽 주문인 경우
-        const ordered_price = orderObj.price;
-        const target_price =
-          coinObj.prev_lower -
-          coinObj.prev_lower * (whiteCoinObj.order_gap / 100);
-        if (
-          !(
-            ordered_price < target_price * 1.01 &&
-            ordered_price > target_price * 0.99
-          )
-        ) {
-          // 가격 변경을 해준다.
-          //  (symbol, side, price)
-          const price = getCleanFloat(
+            coinObj.prev_upper * (whiteCoinObj.order_gap / 100);
+          if (
+            !(
+              ordered_price < target_price * 1.01 &&
+              ordered_price > target_price * 0.99
+            )
+          ) {
+            // 가격 변경을 해준다.
+            //  (symbol, side, price)
+            const price = getCleanFloat(
+              coinObj.prev_upper +
+                coinObj.prev_upper * (whiteCoinObj.order_gap / 100),
+              coinObj.tick_size
+            );
+            await replace_one_position(symbol, side, price);
+          }
+        } else if (orderObj.side === "Buy") {
+          // 아래쪽 주문인 경우
+          const ordered_price = orderObj.price;
+          const target_price =
             coinObj.prev_lower -
-              coinObj.prev_lower * (whiteCoinObj.order_gap / 100),
-            coinObj.tick_size
-          );
-          await replace_one_position(symbol, side, price);
+            coinObj.prev_lower * (whiteCoinObj.order_gap / 100);
+          if (
+            !(
+              ordered_price < target_price * 1.01 &&
+              ordered_price > target_price * 0.99
+            )
+          ) {
+            // 가격 변경을 해준다.
+            //  (symbol, side, price)
+            const price = getCleanFloat(
+              coinObj.prev_lower -
+                coinObj.prev_lower * (whiteCoinObj.order_gap / 100),
+              coinObj.tick_size
+            );
+            await replace_one_position(symbol, side, price);
+          }
         }
       }
     }

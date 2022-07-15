@@ -8,6 +8,15 @@ const {
 } = require("../utils/index");
 
 module.exports = {
+  /**
+   * 신규로 주문을 넣어줌.
+   * @param {*} symbol
+   * @param {*} side
+   * @param {*} price
+   * @param {*} qty
+   * @param {*} order_type
+   * @returns
+   */
   create_one_position: async (symbol, side, price, qty, order_type) => {
     const coinObj = findCoinInfo(symbol);
     const orderObj = findOrderInfo(coinObj, side);

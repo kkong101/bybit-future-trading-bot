@@ -125,6 +125,19 @@ module.exports = {
     }
     return null;
   },
+  existLimitOrder: (coinObj) => {
+    if (coinObj === null) return null;
+    if (coinObj.order.length === 0) return false;
+    return true;
+  },
+  existOnPosition: (symbol) => {
+    for (const position of on_position_coin_list) {
+      if (position.symbol === symbol) {
+        return true;
+      }
+    }
+    return false;
+  },
   /**
    * 현재 채결된 코인의 오브젝트를 가져오는 함수
    * @param {*} symbol

@@ -28,6 +28,8 @@ module.exports = {
     const entry_price = onPositionObj.price;
     const market_price = coinObj.current_price;
 
+    const isChangedStopLossPrice = coinObj.stop_loss_price != 0;
+
     // 퍼샌테이지 구하는 부분
     const percentage = getPercentage(market_price, entry_price, side);
 
@@ -37,8 +39,25 @@ module.exports = {
     // ########### 익절/손절 부분 check하는 곳  ###########
     if (whiteCoinObj.take_profit > percentage) {
       return 2;
-    } else if (whiteCoinObj.partial_profit_percent > percentage) {
+    } else if (
+      !isChangedStopLossPrice &&
+      whiteCoinObj.partial_profit_percent > percentage
+    ) {
       return 1;
+    } else if (
+      isChangedStopLossPrice &&
+      side === "Sell" &&
+      market_price > coinObj.stop_loss_price
+    ) {
+      // 손절가가 변경되었을때 손절하는 경우
+      return 0;
+    } else if (
+      isChangedStopLossPrice &&
+      side === "Buy" &&
+      market_price < coinObj.stop_loss_price
+    ) {
+      // 손절가가 변경되었을때 손절하는 경우
+      return 0;
     } else if (whiteCoinObj.stop_loss * -1 > percentage) {
       return 0;
     }
