@@ -1,7 +1,8 @@
 const { WebsocketClient } = require("bybit-api");
-const { coin_info } = require("../globalState/index");
+const { coin_info, trade } = require("../globalState/index");
 const { check_close_position } = require("../check/index");
 const { on_position_coin_list } = require("../globalState/index");
+const { setUpDownPosition } = require("../indicator/index");
 
 module.exports = {
   /**
@@ -29,6 +30,10 @@ module.exports = {
       if (direction_list.length == 0) return;
       const obj = direction_list[direction_list.length - 1];
       const symbol = obj.symbol;
+
+      // 위인지 아래인지 체크
+      setUpDownPosition(symbol);
+
       // ###### 가격이 변동되면 손절/익절 할건지 체크 and BB전략 지표 세팅
       for (const coin of on_position_coin_list) {
         if (coin.symbol == symbol) {

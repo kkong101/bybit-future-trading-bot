@@ -6,8 +6,8 @@ const {
   findCoinInfo,
 } = require("../utils/index");
 const { set_isolated_mode } = require("./set");
-const { on_position_coin_list } = require("../globalState/index");
-const { white_list } = require("../COINS.json");
+const { on_position_coin_list, trade } = require("../globalState/index");
+const { white_list, } = require("../COINS.json");
 
 module.exports = {
   /**

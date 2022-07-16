@@ -1,4 +1,6 @@
+const { on_position_coin_list } = require("../globalState");
 const { getAxios, postAxios } = require("../http/index");
+const { makeLog } = require("../utils/index");
 const {
   findCoinInfo,
   findOrderInfo,
@@ -9,7 +11,7 @@ const {
 
 module.exports = {
   /**
-   * 신규로 주문을 넣어줌.
+   * 신규로 주문을 넣어줌. => on_position_list에다가도 바로 넣어줌.
    * @param {*} symbol
    * @param {*} side
    * @param {*} price
@@ -54,9 +56,23 @@ module.exports = {
         sl_trigger_by: "LastPrice",
       };
     }
-
+    console.log(params);
     const res = await postAxios("/private/linear/order/create", params);
-    if (isWellContacted(res)) return true;
+    makeLog("@@ create_one_position", "dev");
+    makeLog(res, "dev");
+    if (isWellContacted(res)) {
+      const orderObj = findOrderInfo(coinObj, res.result?.side);
+      // 만약 order_id list에 없다면 넣어주기.
+      if (orderObj === null) {
+        coinObj.order.push({
+          id: res.result?.order_id,
+          side: res.result?.side,
+          price: parseFloat(res.result?.price),
+          qty: parseFloat(res.result?.qty),
+        });
+      }
+      return true;
+    }
     return false;
   },
   replace_one_position: async (symbol, side, price) => {
@@ -75,6 +91,8 @@ module.exports = {
     };
 
     const res = await postAxios("/private/linear/order/replace", params);
+    makeLog("@@ replace_one_position", "dev");
+    makeLog(res, "dev");
     if (isWellContacted(res)) return true;
     return false;
   },
@@ -106,6 +124,8 @@ module.exports = {
       };
     }
     const res = await postAxios("/private/linear/order/create", params);
+    makeLog("@@ close_one_position", "dev");
+    makeLog(res, "dev");
     // 판매가 완료 되었으면 => on_position_coin_list 에서 빼줌 .
     if (isWellContacted(res)) {
       const idx = findOnPositionIdx(symbol, side);
@@ -149,6 +169,8 @@ module.exports = {
       order_id: orderObj.id,
     });
     if (isWellContacted(res)) return true;
+    makeLog("@@ cancel_one_side_limit_order", "dev");
+    makeLog(res, "dev");
     return false;
   },
 };

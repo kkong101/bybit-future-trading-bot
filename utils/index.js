@@ -21,7 +21,7 @@ module.exports = {
     return crypto
       .createHmac(
         "sha256",
-        SECRET.mode == "live" ? SECRET.live.API_SECRET : SECRET.test.API_SECRET
+        SECRET.mode === "live" ? SECRET.live.API_SECRET : SECRET.test.API_SECRET
       )
       .update(orderedParams)
       .digest("hex");
@@ -80,9 +80,9 @@ module.exports = {
     let precision_num = 0;
     const splitedList = min_size.toString().split(".");
     if (splitedList.length > 1) {
-      precision_num = stringed_number.split(".")[1].length;
+      precision_num = splitedList[1].length;
     }
-    return parseFloat(longFloat.toFixed());
+    return parseFloat(longFloat.toFixed(precision_num));
   },
   /**
    * 최소 수량에 맞춰서 나머지 제거하는 함수
@@ -90,7 +90,12 @@ module.exports = {
    * @param {*} qty_step
    */
   getClearnQty: (qty, qty_step) => {
-    qty = qty - (qty % qty_step);
+    const longFloat = qty - (qty % qty_step);
+    const splitedList = qty_step.toString().split(".");
+    if (splitedList.length > 1) {
+      precision_num = splitedList[1].length;
+    }
+    return parseFloat(longFloat.toFixed(precision_num));
   },
   /**
    * 몇초동안 작동 정지?

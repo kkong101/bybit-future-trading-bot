@@ -27,24 +27,19 @@ module.exports = {
 
     if (coinInfo === null || coinObj === null) return;
 
-    // ####### up_or_down 설정하는 부분 #########
+    // ####### EMA 설정하는 부분 #########
     const ema30 = EMA.calculate({
-      period: 25,
+      period: 30,
       values: values,
     });
     const ema6 = EMA.calculate({
       period: 6,
       values: values,
     });
-    const curr_ema30 = ema30[ema30.length - 1];
-    const curr_ema6 = ema6[ema6.length - 1];
 
-    if (curr_ema30 - curr_ema6 < 0) {
-      coinObj.up_or_down = "down";
-    } else {
-      coinObj.up_or_down = "up";
-    }
-    // ####### up_or_down 설정하는 부분 #########
+    coinObj.prev_slow_ema = ema30[ema30.length - 2];
+    coinObj.prev_fast_ema = ema6[ema6.length - 2];
+    // ####### EMA 설정하는 부분 #########
 
     // 현재 close 가격은 빼준다.
     values.pop();
@@ -59,5 +54,27 @@ module.exports = {
     coinObj.prev_upper = BB_result[BB_result.length - 2].upper;
     coinObj.prev_lower = BB_result[BB_result.length - 2].lower;
   },
-  setUpDownPosition: async (symbol) => {},
+  setUpDownPosition: async (symbol) => {
+    const coinObj = findCoinInfo(symbol);
+    if (coinObj === null) return;
+
+    coinObj.prev_slow_ema;
+    coinObj.prev_fast_ema;
+
+    const slow_alpha = 2 / 31;
+    const fast_alpha = 2 / 7;
+
+    const curr_slow_ema =
+      coinObj.prev_slow_ema * (1 - slow_alpha) +
+      coinObj.current_price * slow_alpha;
+    const curr_fast_ema =
+      coinObj.prev_fast_ema * (1 - fast_alpha) +
+      coinObj.current_price * fast_alpha;
+
+    if (curr_slow_ema < curr_fast_ema) {
+      coinObj.up_or_down = "up";
+    } else {
+      coinObj.up_or_down = "down";
+    }
+  },
 };

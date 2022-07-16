@@ -1,5 +1,6 @@
 const { getAxios } = require("../http/index");
 const { checkNullish } = require("../utils/index");
+const { trade } = require("../globalState/index");
 
 module.exports = {
   setBalance: async () => {
