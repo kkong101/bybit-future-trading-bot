@@ -168,6 +168,9 @@ module.exports = {
             coinObj.prev_upper * (whiteCoinObj.order_gap / 100),
           coinObj.tick_size
         );
+
+        // 변경할 가격이 동일하다면 주문 안해줌.
+        if (price == orderObj.price) return false;
         await replace_one_position(symbol, side, price);
       } else if (orderObj.side === "Buy") {
         // 아래쪽 주문인 경우
@@ -177,6 +180,7 @@ module.exports = {
             coinObj.prev_lower * (whiteCoinObj.order_gap / 100),
           coinObj.tick_size
         );
+        if (price == orderObj.price) return false;
         await replace_one_position(symbol, side, price);
       }
     }

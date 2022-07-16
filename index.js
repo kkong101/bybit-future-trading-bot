@@ -71,6 +71,7 @@ const main = async () => {
     for (const coin of white_list) {
       await check_on_position_list(coin.symbol);
       await check_limit_order_list(coin.symbol);
+      await setBalance();
     }
   }, 20 * 1000);
 };

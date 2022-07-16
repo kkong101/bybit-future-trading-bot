@@ -93,7 +93,11 @@ module.exports = {
     const res = await postAxios("/private/linear/order/replace", params);
     makeLog("@@ replace_one_position", "dev");
     makeLog(res, "dev");
-    if (isWellContacted(res)) return true;
+    if (isWellContacted(res)) {
+      // order list에서 가격 update를 해줌.
+      orderObj.price = price;
+      return true;
+    }
     return false;
   },
   close_one_position: async (symbol, side, price, qty, order_type) => {
@@ -168,7 +172,12 @@ module.exports = {
       symbol: symbol,
       order_id: orderObj.id,
     });
-    if (isWellContacted(res)) return true;
+    if (isWellContacted(res)) {
+      // 해당 order 지워준다.
+      const idx = orderObj.findIdx((e) => e.side === side);
+      orderObj.splice(idx, 1);
+      return true;
+    }
     makeLog("@@ cancel_one_side_limit_order", "dev");
     makeLog(res, "dev");
     return false;
