@@ -25,6 +25,8 @@ module.exports = {
 
     // 이미 체결되어 있으면 빠꾸
     if (orderObj) return false;
+    // 최소 주문 수량 미만이면 빠꾸
+    if (qty < coinObj.min_trading_qty) return false;
 
     let params = {};
 
@@ -168,14 +170,18 @@ module.exports = {
   cancel_one_side_limit_order: async (symbol, side) => {
     const coinObj = findCoinInfo(symbol);
     const orderObj = findOrderInfo(coinObj, side);
+    if (orderObj === null) return;
     const res = await postAxios("/private/linear/order/cancel", {
       symbol: symbol,
       order_id: orderObj.id,
     });
+    console.log("### orderObj", orderObj);
     if (isWellContacted(res)) {
       // 해당 order 지워준다.
-      const idx = orderObj.findIdx((e) => e.side === side);
-      orderObj.splice(idx, 1);
+      const idx = coinObj.order.findIndex(
+        (e) => e.side === side && e.symbol === symbol
+      );
+      coinObj.order.splice(idx, 1);
       return true;
     }
     makeLog("@@ cancel_one_side_limit_order", "dev");

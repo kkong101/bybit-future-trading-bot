@@ -4,10 +4,11 @@ const {
   findOnPositionList,
   findOnPositionIdx,
   findCoinInfo,
+  findOnPositionObj,
 } = require("../utils/index");
 const { set_isolated_mode } = require("./set");
 const { on_position_coin_list, trade } = require("../globalState/index");
-const { white_list, } = require("../COINS.json");
+const { white_list } = require("../COINS.json");
 
 module.exports = {
   /**
@@ -25,24 +26,26 @@ module.exports = {
         // 만약 구매한 상태라면,
         if (parseFloat(position.size) != 0) {
           const onPositionList = findOnPositionList(symbol);
-          for (const onPositionObj of onPositionList) {
-            if (onPositionObj !== null) {
-              // 추가 포지션 진입인 경우
+          if (onPositionList.length === 0) {
+            on_position_coin_list.push({
+              symbol: symbol,
+              side: position.side,
+              price: parseFloat(position.entry_price),
+              qty: parseFloat(position.size),
+              initial_qty: parseFloat(position.size),
+              time: Date.now(),
+              liq_price: parseFloat(position.liq_price),
+            });
+          } else {
+            const onPositionObj = findOnPositionObj(symbol, position.side);
+            if (
+              onPositionObj !== null &&
+              onPositionObj.qty != parseFloat(position.size)
+            ) {
               onPositionObj.time = Date.now();
               onPositionObj.qty = parseFloat(position.size);
               onPositionObj.price = parseFloat(position.entry_price);
               onPositionObj.liq_price = parseFloat(position.liq_price);
-            } else if (onPositionObj === null) {
-              // 최초 포지션 진입인 경우
-              on_position_coin_list.push({
-                symbol: symbol,
-                side: position.side,
-                price: parseFloat(position.entry_price),
-                qty: parseFloat(position.size),
-                initial_qty: parseFloat(position.size),
-                time: Date.now(),
-                liq_price: parseFloat(position.liq_price),
-              });
             }
           }
         } else {

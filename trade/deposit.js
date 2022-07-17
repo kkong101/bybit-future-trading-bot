@@ -7,7 +7,7 @@ module.exports = {
     const res = await getAxios("/v2/private/wallet/balance");
     if (checkNullish(res)) return;
     if (res.ret_msg == "OK") {
-      trade.total_money = res.result.USDT.available_balance;
+      trade.total_money = parseFloat(res.result.USDT.available_balance);
     }
   },
 };

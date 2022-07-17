@@ -3,6 +3,7 @@ const { coin_info, trade } = require("../globalState/index");
 const { check_close_position } = require("../check/index");
 const { on_position_coin_list } = require("../globalState/index");
 const { setUpDownPosition } = require("../indicator/index");
+const { findCoinInfo } = require("../utils");
 
 module.exports = {
   /**
@@ -30,6 +31,10 @@ module.exports = {
       if (direction_list.length == 0) return;
       const obj = direction_list[direction_list.length - 1];
       const symbol = obj.symbol;
+      const coinObj = findCoinInfo(symbol);
+      if (coinObj === null) return;
+
+      coinObj.current_price = parseFloat(obj.price);
 
       // 위인지 아래인지 체크
       setUpDownPosition(symbol);

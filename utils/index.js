@@ -36,7 +36,7 @@ module.exports = {
     const percentage = 1 - market_price / entry_price;
     let result = percentage < 1 ? percentage * -1 : percentage - 1;
     if (side !== "Buy") result = result * -1;
-    return result;
+    return result * 100;
   },
   /**
    * null 체크해주는 함수
@@ -164,7 +164,7 @@ module.exports = {
     if (on_position_coin_list.length === 0) return [];
     let res = [];
     for (const position of on_position_coin_list) {
-      if (position.symbol === symbol && position.side === side) {
+      if (position.symbol === symbol) {
         res.push(position);
       }
     }
