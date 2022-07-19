@@ -1,4 +1,3 @@
-const { on_position_coin_list } = require("../globalState/index");
 const {
   findCoinInfo,
   getPercentage,
@@ -28,7 +27,7 @@ module.exports = {
     const entry_price = onPositionObj.price;
     const market_price = coinObj.current_price;
 
-    const isPartiallyClosed = coinObj.stop_loss_price !== 0;
+    const isPartiallyClosed = onPositionObj.partial_profit !== 0;
 
     // 퍼샌테이지 구하는 부분
     const percentage = getPercentage(market_price, entry_price, side);
@@ -49,14 +48,14 @@ module.exports = {
     } else if (
       isPartiallyClosed &&
       side === "Sell" &&
-      market_price > coinObj.stop_loss_price
+      market_price > onPositionObj.stop_loss_price
     ) {
       // 손절가가 변경되었을때 손절하는 경우
       return 0;
     } else if (
       isPartiallyClosed &&
       side === "Buy" &&
-      market_price < coinObj.stop_loss_price
+      market_price < onPositionObj.stop_loss_price
     ) {
       // 손절가가 변경되었을때 손절하는 경우
       return 0;

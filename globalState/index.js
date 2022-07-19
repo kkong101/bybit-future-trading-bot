@@ -39,6 +39,7 @@ module.exports = {
       qty: parseFloat(position.size),
       initial_qty: parseFloat(position.size),
       time: Date.now(),
+      partial_profit: 0,
       liq_price: parseFloat(position.liq_price),
     }
    */

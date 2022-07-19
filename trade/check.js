@@ -25,19 +25,21 @@ module.exports = {
       for (const position of res.result) {
         // 만약 구매한 상태라면,
         if (parseFloat(position.size) != 0) {
-          const onPositionList = findOnPositionList(symbol);
-          if (onPositionList.length === 0) {
+          const onPositionObj = findOnPositionObj(symbol, position.side);
+          if (onPositionObj === null) {
+            //신규 진입
             on_position_coin_list.push({
               symbol: symbol,
               side: position.side,
               price: parseFloat(position.entry_price),
               qty: parseFloat(position.size),
               initial_qty: parseFloat(position.size),
+              partial_profit: 0,
               time: Date.now(),
               liq_price: parseFloat(position.liq_price),
             });
           } else {
-            const onPositionObj = findOnPositionObj(symbol, position.side);
+            // 이미 구매된거 정보 업데이트
             if (
               onPositionObj !== null &&
               onPositionObj.qty != parseFloat(position.size)
@@ -53,7 +55,7 @@ module.exports = {
           // on_position_coin_list에서 빼준다.
           const coinObj = findCoinInfo(symbol);
           if (coinObj === null) return false;
-          coinObj.stop_loss_price = 0;
+
           const idx = findOnPositionIdx(symbol, position.side);
           if (idx != -1) on_position_coin_list.splice(idx, 1);
         }

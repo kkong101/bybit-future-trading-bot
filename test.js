@@ -4,15 +4,20 @@ const { create_one_position } = require("./trade/order");
 const { getSecretInfo, getPercentage } = require("./utils/index");
 
 const ewfwef = async () => {
-  const market_price = 100;
-  const entry_price = 101;
-  const side = "Sell";
-  const test = getPercentage(market_price, entry_price, side);
-
-  console.log(test);
-
-  const test22 = getPercentage(market_price, entry_price, "Buy");
-  console.log(test22);
+  const symbol = "NEARUSDT";
+  const res = await getAxios("/private/linear/position/list", {
+    symbol: symbol,
+  });
+  if (res?.result && res.result?.length != 0) {
+    for (const position of res.result) {
+      if (parseFloat(position.size) != 0) {
+        console.log("1111");
+        console.log(position);
+      } else {
+        console.log("2222");
+      }
+    }
+  }
 };
 
 ewfwef();

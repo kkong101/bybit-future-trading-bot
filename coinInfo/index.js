@@ -30,7 +30,6 @@ module.exports = {
             recent_try_order_time: Date.now(),
             isCrossed: false,
             up_or_down: "up",
-            stop_loss_price: 0,
             order: [],
           });
         }

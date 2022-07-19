@@ -15,6 +15,7 @@ const {
   existOnPosition,
   getClearnQty,
   findOnPositionList,
+  sleep,
 } = require("../utils/index");
 const { check_on_position_list } = require("../trade/check");
 const { trade } = require("../globalState");
@@ -26,14 +27,15 @@ module.exports = {
    * @returns
    */
   check_close_position: async (symbol) => {
-    const position_list = ["Buy", "Sell"];
+    console.log("#### check_close_position");
 
-    for (const side of position_list) {
-      const whiteCoinObj = white_list.find((e) => e.symbol === symbol);
-      const coinObj = findCoinInfo(symbol);
-      const onPositionObj = findOnPositionObj(symbol, side);
-      if (whiteCoinObj === null || onPositionObj === null) return false;
+    const onPositionList = findOnPositionList(symbol);
+    if (onPositionList.length === 0) return false;
+    const whiteCoinObj = white_list.find((e) => e.symbol === symbol);
+    const coinObj = findCoinInfo(symbol);
 
+    for (const position of onPositionList) {
+      const side = position.side;
       const result_cond = isSell_BB_Stretagy(symbol, side);
       console.log("#### result_cond", result_cond);
       if (result_cond === -1) return false;
@@ -45,27 +47,25 @@ module.exports = {
           symbol,
           side,
           0,
-          onPositionObj.qty,
+          position.qty,
           "Market"
         );
         // 체결됬다면 on_position_list 업데이트
         if (res === true) {
           await check_on_position_list(symbol);
-          coinObj.stop_loss_price = 0;
+          position.stop_loss_price = 0;
+          position.partial_profit = 0;
         }
       } else if (result_cond === 1) {
+        // 부분익절
         console.log("### result_cond => 1");
-        console.log("### onPositionObj.initial_qty", onPositionObj.initial_qty);
+        console.log("### onPositionObj.initial_qty", position.initial_qty);
         // 만약 이미 부분 익절한 상태라면 return 해준다.
-        console.log(
-          "#### onPositionObj.initial_qty != onPositionObj.qty",
-          onPositionObj.initial_qty != onPositionObj.qty
-        );
-        if (onPositionObj.initial_qty != onPositionObj.qty) return;
+        if (position.partial_profit !== 0) return;
 
         // 부분 익절
         const qty = getClearnQty(
-          onPositionObj.initial_qty * whiteCoinObj.partial_profit_qty_percent,
+          position.initial_qty * whiteCoinObj.partial_profit_qty_percent,
           coinObj.qty_step
         );
 
@@ -78,26 +78,28 @@ module.exports = {
           await check_on_position_list(symbol);
 
           // 손절가 부분 바꿔줌.
-          coinObj.stop_loss_price = onPositionObj.price;
+          position.stop_loss_price = position.price;
+          position.partial_profit = position.partial_profit + 1;
         }
         // 체결됬다면 on_position_list 업데이트
         if (res === true) await check_on_position_list(symbol);
       } else if (result_cond === 2) {
         console.log("### result_cond => 2");
-        console.log("### 123123", onPositionObj.qty);
+        console.log("### 123123", position.qty);
         // 전량 익절
         const res = await close_one_position(
           symbol,
           side,
           0,
-          onPositionObj.qty,
+          position.qty,
           "Market"
         );
         // 체결됬다면 on_position_list 업데이트
-        console.log("### onPositionObj.qty", onPositionObj.qty);
+        console.log("### onPositionObj.qty", position.qty);
         if (res === true) {
           await check_on_position_list(symbol);
-          coinObj.stop_loss_price = 0;
+          position.stop_loss_price = 0;
+          position.partial_profit = 0;
         }
       }
     }
@@ -108,11 +110,19 @@ module.exports = {
    */
   check_modify_order: async (symbol) => {
     // 만약 거래 체결된게 있다면, 돌아가기
-    const onPositionList = findOnPositionList(symbol);
-    if (onPositionList.length !== 0) return false;
 
     const coinObj = findCoinInfo(symbol);
     if (coinObj === null) return false;
+
+    const onPositionList = findOnPositionList(symbol);
+    if (onPositionList.length !== 0) {
+      //현재 주문걸려있는거 있다면 취소하고 return
+      if (coinObj.order.length !== 0) {
+        await cancel_one_side_limit_order(symbol, "Sell");
+        await cancel_one_side_limit_order(symbol, "Buy");
+      }
+      return false;
+    }
 
     const whiteCoinObj = white_list.find((e) => e.symbol === symbol);
 

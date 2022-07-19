@@ -36,8 +36,8 @@ module.exports = {
     };
     const BB_result = BB.calculate(input);
 
-    coinObj.prev_upper = BB_result[BB_result.length - 2].upper;
-    coinObj.prev_lower = BB_result[BB_result.length - 2].lower;
+    coinObj.prev_upper = BB_result[BB_result.length - 1].upper;
+    coinObj.prev_lower = BB_result[BB_result.length - 1].lower;
 
     // ####### EMA 설정하는 부분 #########
     const ema30 = EMA.calculate({

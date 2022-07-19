@@ -24,7 +24,7 @@ module.exports = {
     const orderObj = findOrderInfo(coinObj, side);
 
     // 이미 체결되어 있으면 빠꾸
-    if (orderObj) return false;
+    if (orderObj !== null) return false;
     // 최소 주문 수량 미만이면 빠꾸
     if (qty < coinObj.min_trading_qty) return false;
 
@@ -181,7 +181,7 @@ module.exports = {
       const idx = coinObj.order.findIndex(
         (e) => e.side === side && e.symbol === symbol
       );
-      coinObj.order.splice(idx, 1);
+      if (idx !== -1) coinObj.order.splice(idx, 1);
       return true;
     }
     makeLog("@@ cancel_one_side_limit_order", "dev");
