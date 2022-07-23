@@ -35,7 +35,8 @@ module.exports = {
               qty: parseFloat(position.size),
               initial_qty: parseFloat(position.size),
               partial_profit: 0,
-              time: Date.now(),
+              updated_time: Date.now(), // 익절 손절 시간 관리
+              purchased_time: Date.now(),
               liq_price: parseFloat(position.liq_price),
             });
           } else {
@@ -44,8 +45,8 @@ module.exports = {
               onPositionObj !== null &&
               onPositionObj.qty != parseFloat(position.size)
             ) {
-              onPositionObj.time = Date.now();
               onPositionObj.qty = parseFloat(position.size);
+              onPositionObj.purchased_time = Date.now();
               onPositionObj.price = parseFloat(position.entry_price);
               onPositionObj.liq_price = parseFloat(position.liq_price);
             }

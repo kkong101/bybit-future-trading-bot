@@ -35,13 +35,22 @@ module.exports = {
     const coinObj = findCoinInfo(symbol);
 
     for (const position of onPositionList) {
+      if (Date.now() - position.purchased_time < 100 * 1000) return false;
+
       const side = position.side;
-      const result_cond = isSell_BB_Stretagy(symbol, side);
+      let result_cond = isSell_BB_Stretagy(symbol, side);
       console.log("#### result_cond", result_cond);
+      if (Date.now() - position.purchased_time > 10 * 60 * 1000) {
+        // 만약 구매한지 10분이 지났으면 전량 포지션 정리
+        result_cond = 0;
+      }
       if (result_cond === -1) return false;
 
-      // 손절인 경우
+      if (Date.now() - position.updated_time < 3000) return false;
+
+      position.updated_time = Date.now();
       if (result_cond === 0) {
+        // 손절인 경우
         console.log("### result_cond => 0");
         const res = await close_one_position(
           symbol,
@@ -97,9 +106,9 @@ module.exports = {
         // 체결됬다면 on_position_list 업데이트
         console.log("### onPositionObj.qty", position.qty);
         if (res === true) {
-          await check_on_position_list(symbol);
           position.stop_loss_price = 0;
           position.partial_profit = 0;
+          await check_on_position_list(symbol);
         }
       }
     }
@@ -110,7 +119,7 @@ module.exports = {
    */
   check_modify_order: async (symbol) => {
     // 만약 거래 체결된게 있다면, 돌아가기
-
+    console.log("#### check_modify_order");
     const coinObj = findCoinInfo(symbol);
     if (coinObj === null) return false;
 

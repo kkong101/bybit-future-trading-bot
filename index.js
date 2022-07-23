@@ -45,20 +45,13 @@ const main = async () => {
   setInterval(async () => {
     const newMin = new Date().getMinutes();
     if (newMin == prevMin) return;
-    sleep(1000);
+    sleep(900);
     for (const coin of white_list) {
       await setBBInfo(coin.symbol);
       await check_modify_order(coin.symbol);
     }
     prevMin = newMin;
-  }, 1000);
-
-  // limit_order 변경해주는곳
-  // setInterval(async () => {
-  //   for (const coin of white_list) {
-  //     await check_modify_order(coin.symbol);
-  //   }
-  // }, 12 * 1000);
+  }, 2000);
 
   // queue을 계속 확인하면서 거래 체결된게 있으면, 처리
   setInterval(async () => {
