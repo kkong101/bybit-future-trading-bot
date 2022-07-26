@@ -119,7 +119,7 @@ module.exports = {
    */
   check_modify_order: async (symbol) => {
     // 만약 거래 체결된게 있다면, 돌아가기
-    console.log("#### check_modify_order");
+    console.log("#### check_modify_order 들어감");
     const coinObj = findCoinInfo(symbol);
     if (coinObj === null) return false;
 
