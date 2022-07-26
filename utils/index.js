@@ -90,6 +90,7 @@ module.exports = {
    * @param {*} qty_step
    */
   getClearnQty: (qty, qty_step) => {
+    let precision_num = 0;
     const longFloat = qty - (qty % qty_step);
     const splitedList = qty_step.toString().split(".");
     if (splitedList.length > 1) {
