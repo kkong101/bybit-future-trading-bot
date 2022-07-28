@@ -35,10 +35,16 @@ module.exports = {
     const coinObj = findCoinInfo(symbol);
 
     for (const position of onPositionList) {
-      if (Date.now() - position.purchased_time < 120 * 1000) return false;
-
       const side = position.side;
       let result_cond = isSell_BB_Stretagy(symbol, side);
+
+      if (
+        Date.now() - position.purchased_time < 120 * 1000 &&
+        result_cond == 0
+      ) {
+        // 손절은 2분 후에나 가능
+        return false;
+      }
       console.log("#### result_cond", result_cond);
       if (Date.now() - position.purchased_time > 10 * 60 * 1000) {
         // 만약 구매한지 10분이 지났으면 전량 포지션 정리
