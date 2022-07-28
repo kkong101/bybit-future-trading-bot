@@ -35,7 +35,7 @@ module.exports = {
     const coinObj = findCoinInfo(symbol);
 
     for (const position of onPositionList) {
-      if (Date.now() - position.purchased_time < 100 * 1000) return false;
+      if (Date.now() - position.purchased_time < 120 * 1000) return false;
 
       const side = position.side;
       let result_cond = isSell_BB_Stretagy(symbol, side);

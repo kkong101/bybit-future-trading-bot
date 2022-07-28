@@ -2,7 +2,7 @@ module.exports = {
   trade: {
     total_money: 0.0,
     leverage: 1,
-    using_money_rate: 0.95,
+    using_money_rate: 0.6,
     is_onPosition: false,
   },
   coin_info: [],

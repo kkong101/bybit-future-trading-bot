@@ -1,11 +1,11 @@
 {
   "white_list": [
     {
-      "symbol": "ADAUSDT",
+      "symbol": "GMTUSDT",
       "partial_profit_percent": 0.35,
       "take_profit": 0.8,
-      "partial_profit_qty_percent": 0.4,
-      "order_gap": 0.45,
+      "partial_profit_qty_pe˚rcent": 0.3,
+      "order_gap": 0.65,
       "stop_loss": 0.6,
       "indicator_stdDev": 2,
       "indicator_period": 20
